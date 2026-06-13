@@ -1,0 +1,718 @@
+
+<h2 class="sr-only">Two pixel mascots that patrol, battle with superpowers, one falls, loops forever</h2>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+.scene{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:280px;
+  padding:20px;background:#0d0d0d;
+  font-family:-apple-system,sans-serif;
+  overflow:hidden;position:relative;
+}
+.btn-row{
+  display:flex;gap:12px;align-items:flex-end;
+  position:relative;margin-top:80px;
+}
+.btn-wrap{position:relative;display:inline-block;}
+.btn-wrap.shake{animation:shk 0.4s ease;}
+@keyframes shk{
+  0%{transform:translateX(0);}
+  15%{transform:translateX(-6px);}
+  30%{transform:translateX(6px);}
+  45%{transform:translateX(-5px);}
+  60%{transform:translateX(5px);}
+  80%{transform:translateX(-2px);}
+  100%{transform:translateX(0);}
+}
+.btn-wrap.bounce{animation:bnc 0.3s cubic-bezier(.36,.07,.19,.97);}
+@keyframes bnc{
+  0%{transform:translateY(0);}
+  25%{transform:translateY(-7px);}
+  55%{transform:translateY(2px);}
+  78%{transform:translateY(-3px);}
+  100%{transform:translateY(0);}
+}
+.mstage{
+  position:absolute;bottom:calc(100% - 2px);
+  left:0;width:100%;height:88px;
+  pointer-events:none;
+}
+.btn{
+  font-size:15px;font-weight:600;padding:15px 36px;
+  border-radius:12px;cursor:pointer;border:none;
+  outline:none;white-space:nowrap;letter-spacing:0.01em;
+}
+.btn-w{background:#fff;color:#111;}
+.btn-b{background:#1a1a1a;color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,0.13);}
+#overlay{
+  position:absolute;inset:0;pointer-events:none;
+  background:#9B6DFF;opacity:0;transition:opacity 0.06s;
+}
+</style>
+
+<div class="scene">
+  <div class="btn-row" id="brow">
+    <div class="btn-wrap" id="w1">
+      <canvas class="mstage" id="c1"></canvas>
+      <button class="btn btn-w" id="b1">Start Project →</button>
+    </div>
+    <div class="btn-wrap" id="w2">
+      <canvas class="mstage" id="c2"></canvas>
+      <button class="btn btn-b" id="b2">Our Portfolio</button>
+    </div>
+  </div>
+  <div id="overlay"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  CONSTANTS
+// ─────────────────────────────────────────────
+const SC=3, PW=10*SC, PH=14*SC;
+const GND=88-PH; // y when standing on ground
+
+// ─────────────────────────────────────────────
+//  SPRITE DATA
+// ─────────────────────────────────────────────
+const _=0,H=1,D=2,T=3,E=4,B=5,K=6,L=7,F=8,A=9,N=10;
+
+const SPRITES={
+stand:[
+  [_,_,T,T,T,T,T,_,_,_],
+  [_,T,H,H,H,H,D,D,_,_],
+  [_,T,H,E,H,H,D,D,_,_],
+  [_,T,H,H,H,E,D,D,_,_],
+  [_,T,H,H,H,H,D,D,_,_],
+  [_,_,T,T,T,T,D,_,_,_],
+  [_,_,N,B,B,N,_,_,_,_],
+  [A,_,B,B,B,B,_,A,_,_],
+  [_,_,B,K,K,B,_,_,_,_],
+  [_,_,K,K,K,K,_,_,_,_],
+  [_,_,L,L,_,L,L,_,_,_],
+  [_,_,L,L,_,L,L,_,_,_],
+  [_,F,F,F,_,F,F,F,_,_],
+  [_,_,_,_,_,_,_,_,_,_],
+],
+walk1:[
+  [_,_,T,T,T,T,T,_,_,_],
+  [_,T,H,H,H,H,D,D,_,_],
+  [_,T,H,E,H,H,D,D,_,_],
+  [_,T,H,H,H,E,D,D,_,_],
+  [_,T,H,H,H,H,D,D,_,_],
+  [_,_,T,T,T,T,D,_,_,_],
+  [_,_,N,B,B,N,_,_,_,_],
+  [_,A,B,B,B,B,A,_,_,_],
+  [_,_,B,K,K,B,_,_,_,_],
+  [_,_,K,K,K,K,_,_,_,_],
+  [_,L,L,_,_,_,L,L,_,_],
+  [L,L,_,_,_,_,_,L,_,_],
+  [F,F,_,_,_,_,F,F,_,_],
+  [_,_,_,_,_,_,_,_,_,_],
+],
+walk2:[
+  [_,_,T,T,T,T,T,_,_,_],
+  [_,T,H,H,H,H,D,D,_,_],
+  [_,T,H,E,H,H,D,D,_,_],
+  [_,T,H,H,H,E,D,D,_,_],
+  [_,T,H,H,H,H,D,D,_,_],
+  [_,_,T,T,T,T,D,_,_,_],
+  [_,_,N,B,B,N,_,_,_,_],
+  [_,A,B,B,B,B,A,_,_,_],
+  [_,_,B,K,K,B,_,_,_,_],
+  [_,_,K,K,K,K,_,_,_,_],
+  [_,_,L,L,_,L,L,_,_,_],
+  [_,_,_,L,_,L,_,_,_,_],
+  [_,_,_,F,F,F,F,F,_,_],
+  [_,_,_,_,_,_,_,_,_,_],
+],
+charge:[
+  [_,_,T,T,T,T,T,_,_,_],
+  [_,T,H,H,H,H,D,D,_,_],
+  [_,T,H,E,H,H,D,D,_,_],
+  [_,T,H,H,H,E,D,D,_,_],
+  [_,T,H,H,H,H,D,D,_,_],
+  [_,_,T,T,T,T,D,_,_,_],
+  [_,_,N,B,B,N,_,_,_,_],
+  [_,_,B,B,B,B,A,A,A,_],
+  [_,_,B,K,K,B,_,_,_,_],
+  [_,_,K,K,K,K,_,_,_,_],
+  [_,_,L,L,_,L,L,_,_,_],
+  [_,_,L,L,_,L,L,_,_,_],
+  [_,F,F,F,_,F,F,F,_,_],
+  [_,_,_,_,_,_,_,_,_,_],
+],
+hit:[
+  [_,_,_,T,T,T,T,T,_,_],
+  [_,_,T,H,H,H,H,D,D,_],
+  [_,_,T,H,E,H,H,D,D,_],
+  [_,_,T,H,H,H,E,D,D,_],
+  [_,_,T,H,H,H,H,D,D,_],
+  [_,_,_,T,T,T,T,D,_,_],
+  [_,_,_,N,B,B,N,_,_,_],
+  [_,A,_,B,B,B,B,_,_,_],
+  [_,_,_,B,K,K,B,_,_,_],
+  [_,_,_,K,K,K,K,_,_,_],
+  [_,_,_,L,L,_,L,L,_,_],
+  [_,_,_,L,L,_,L,L,_,_],
+  [_,_,F,F,F,_,F,F,F,_],
+  [_,_,_,_,_,_,_,_,_,_],
+],
+fall:[
+  [_,_,_,_,_,_,_,_,_,_],
+  [_,_,_,_,_,_,_,_,_,_],
+  [F,F,F,_,F,F,F,_,_,_],
+  [_,L,L,_,_,L,L,_,_,_],
+  [_,_,K,K,K,K,_,_,_,_],
+  [A,_,B,K,K,B,_,A,_,_],
+  [_,_,N,B,B,N,_,_,_,_],
+  [_,_,T,T,T,T,D,_,_,_],
+  [_,T,H,H,H,H,D,D,_,_],
+  [_,T,H,E,H,H,D,D,_,_],
+  [_,T,H,H,H,E,D,D,_,_],
+  [_,T,H,H,H,H,D,D,_,_],
+  [_,_,T,T,T,T,D,_,_,_],
+  [_,_,_,_,_,_,_,_,_,_],
+],
+victory:[
+  [A,_,T,T,T,T,T,_,A,_],
+  [A,T,H,H,H,H,D,D,A,_],
+  [_,T,H,E,H,H,D,D,_,_],
+  [_,T,H,H,H,E,D,D,_,_],
+  [_,T,H,H,H,H,D,D,_,_],
+  [_,_,T,T,T,T,D,_,_,_],
+  [_,_,N,B,B,N,_,_,_,_],
+  [_,_,B,B,B,B,_,_,_,_],
+  [_,_,B,K,K,B,_,_,_,_],
+  [_,_,K,K,K,K,_,_,_,_],
+  [_,_,L,L,_,L,L,_,_,_],
+  [_,_,L,L,_,L,L,_,_,_],
+  [_,F,F,F,_,F,F,F,_,_],
+  [_,_,_,_,_,_,_,_,_,_],
+],
+};
+
+const COL={
+  0:null,
+  1:'#9B6DFF',2:'#5B30CC',3:'#C4A0FF',
+  4:'#F0E0FF',5:'#7B50DD',6:'#3A1A99',
+  7:'#8860EE',8:'#4A25BB',9:'#BB90FF',10:'#D0B8FF',
+};
+
+function drawChar(ctx,name,x,y,flip){
+  const g=SPRITES[name]||SPRITES.stand;
+  ctx.save();
+  if(flip){ctx.translate(x+PW,y);ctx.scale(-1,1);ctx.translate(-x,-y);}
+  for(let r=0;r<g.length;r++)
+    for(let c=0;c<g[r].length;c++){
+      const v=g[r][c];if(!v)continue;
+      ctx.fillStyle=COL[v];
+      ctx.fillRect(x+c*SC,y+r*SC,SC,SC);
+    }
+  ctx.restore();
+}
+
+// ─────────────────────────────────────────────
+//  BLAST
+// ─────────────────────────────────────────────
+class Blast{
+  constructor(x,y,vx){
+    this.x=x;this.y=y;this.vx=vx;
+    this.alive=true;this.r=8;
+    this.trail=[];this.parts=[];this.pulse=0;
+  }
+  update(){
+    this.x+=this.vx;this.pulse+=0.22;
+    this.trail.unshift({x:this.x,y:this.y,a:0.9});
+    if(this.trail.length>16)this.trail.pop();
+    this.trail.forEach(t=>t.a-=0.055);
+    if(Math.random()<0.7){
+      const ang=Math.random()*Math.PI*2;
+      this.parts.push({
+        x:this.x+Math.cos(ang)*this.r*0.7,
+        y:this.y+Math.sin(ang)*this.r*0.7,
+        vx:(Math.random()-0.5)*2.5+this.vx*0.15,
+        vy:(Math.random()-0.5)*2-1.2,
+        life:1,s:Math.random()*3+1.5,
+      });
+    }
+    this.parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.life-=0.045;});
+    this.parts=this.parts.filter(p=>p.life>0);
+  }
+  draw(ctx){
+    // trail
+    this.trail.forEach((t,i)=>{
+      const s=this.r*(0.3+(i/this.trail.length)*0.7);
+      ctx.save();ctx.globalAlpha=Math.max(0,t.a)*0.55;
+      ctx.fillStyle='#7B30FF';
+      ctx.beginPath();ctx.arc(t.x,t.y,s,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    });
+    // sparks
+    this.parts.forEach(p=>{
+      ctx.save();ctx.globalAlpha=p.life*0.9;
+      ctx.fillStyle=p.life>0.5?'#C4A0FF':'#9B6DFF';
+      ctx.beginPath();ctx.arc(p.x,p.y,p.s*p.life,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    });
+    // glow layers
+    const pw=Math.sin(this.pulse)*1.5;
+    [[this.r*3,'rgba(112,30,255,0.12)'],[this.r*1.8,'rgba(155,109,255,0.4)'],[this.r+pw,'#9B6DFF']].forEach(([r,c])=>{
+      ctx.save();ctx.globalAlpha=1;ctx.fillStyle=c;
+      ctx.beginPath();ctx.arc(this.x,this.y,Math.max(0.1,r),0,Math.PI*2);ctx.fill();ctx.restore();
+    });
+    // white core
+    ctx.save();ctx.globalAlpha=0.92;ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(this.x-this.r*0.2,this.y-this.r*0.25,this.r*0.38,0,Math.PI*2);
+    ctx.fill();ctx.restore();
+  }
+}
+
+// ─────────────────────────────────────────────
+//  IMPACT
+// ─────────────────────────────────────────────
+class Impact{
+  constructor(x,y){
+    this.x=x;this.y=y;this.done=false;
+    this.parts=Array.from({length:24},()=>{
+      const ang=Math.random()*Math.PI*2,spd=Math.random()*6+2;
+      return{x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd-3,
+             life:1,s:Math.random()*5+2,
+             col:['#9B6DFF','#C4A0FF','#fff'][Math.floor(Math.random()*3)]};
+    });
+    this.rings=[{r:3,max:40,a:1},{r:3,max:65,a:0.5}];
+  }
+  update(){
+    this.parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.28;p.life-=0.038;});
+    this.parts=this.parts.filter(p=>p.life>0);
+    this.rings.forEach(r=>{
+      r.r=Math.min(r.max,r.r+4);
+      r.a=Math.max(0,r.a-0.05);
+    });
+    if(!this.parts.length&&this.rings[0].a<=0)this.done=true;
+  }
+  draw(ctx){
+    this.rings.forEach(r=>{
+      ctx.save();ctx.globalAlpha=r.a;ctx.strokeStyle='#C4A0FF';
+      ctx.lineWidth=2;ctx.beginPath();ctx.arc(this.x,this.y,r.r,0,Math.PI*2);
+      ctx.stroke();ctx.restore();
+    });
+    this.parts.forEach(p=>{
+      ctx.save();ctx.globalAlpha=p.life;ctx.fillStyle=p.col;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.s*p.life,0,Math.PI*2);ctx.fill();ctx.restore();
+    });
+  }
+}
+
+// ─────────────────────────────────────────────
+//  BATTLE CANVAS (shared, spans row)
+// ─────────────────────────────────────────────
+let bCv=null,bCtx=null,bW=0,bH=88;
+let blasts=[],impacts=[];
+
+function initBCv(){
+  const row=document.getElementById('brow');
+  if(!bCv){
+    bCv=document.createElement('canvas');
+    bCv.style.cssText=`position:absolute;bottom:${document.getElementById('b1').offsetHeight}px;
+      left:0;pointer-events:none;z-index:40;`;
+    row.style.position='relative';
+    row.appendChild(bCv);
+  }
+  bW=row.offsetWidth;
+  bCv.width=bW;bCv.height=bH;
+  bCv.style.bottom=document.getElementById('b1').offsetHeight+'px';
+  bCtx=bCv.getContext('2d');
+}
+
+// ─────────────────────────────────────────────
+//  GLOBAL BATTLE STATE
+// ─────────────────────────────────────────────
+// phases: idle → patrol → fighting → victory_pause → back_to_patrol → idle …
+let phase='idle';
+let fightLoopRaf=null;
+let M1=null,M2=null;
+let anyMouseIn=false;
+let schedTimer=null;
+
+function schedNextFight(){
+  clearTimeout(schedTimer);
+  schedTimer=setTimeout(()=>{
+    if(!anyMouseIn&&M1&&M2) beginFight();
+  },3800);
+}
+
+function beginFight(){
+  if(phase==='fighting')return;
+  phase='fighting';
+  blasts=[];impacts=[];
+  initBCv();
+  const w1wins=Math.random()<0.5;
+  M1.startFight(w1wins,  'right'); // M1 faces right toward M2
+  M2.startFight(!w1wins, 'left');  // M2 faces left toward M1
+  fightLoopRaf=requestAnimationFrame(fightLoop);
+}
+
+function fightLoop(){
+  if(!bCtx){fightLoopRaf=requestAnimationFrame(fightLoop);return;}
+  bCtx.clearRect(0,0,bW,bH);
+
+  // update + draw blasts
+  blasts.forEach(b=>b.update());
+  blasts=blasts.filter(b=>b.alive&&b.x>-60&&b.x<bW+60);
+  blasts.forEach(b=>b.draw(bCtx));
+
+  // collision check: each blast vs opposite mascot
+  const row=document.getElementById('brow');
+  const rowR=row.getBoundingClientRect();
+  [M1,M2].forEach(target=>{
+    const other=target===M1?M2:M1;
+    const btnR=target.btn.getBoundingClientRect();
+    const tx=btnR.left-rowR.left+target.x;
+    const ty=bH-PH;
+    blasts.forEach(b=>{
+      if(!b.alive)return;
+      // blast must be from other mascot (opposite vx direction)
+      const fromOther=(other.fightDir===1&&b.vx>0)||(other.fightDir===-1&&b.vx<0);
+      if(!fromOther)return;
+      if(b.x>tx-8&&b.x<tx+PW+8&&b.y>ty-8&&b.y<ty+PH+8){
+        b.alive=false;
+        impacts.push(new Impact(b.x,b.y));
+        // flash
+        const ov=document.getElementById('overlay');
+        ov.style.opacity='0.15';setTimeout(()=>ov.style.opacity='0',110);
+        target.receiveHit();
+        target.wrap.classList.remove('shake');
+        void target.wrap.offsetWidth;
+        target.wrap.classList.add('shake');
+      }
+    });
+  });
+
+  // update impacts
+  impacts.forEach(im=>im.update());
+  impacts=impacts.filter(im=>!im.done);
+  impacts.forEach(im=>im.draw(bCtx));
+
+  if(phase==='fighting') fightLoopRaf=requestAnimationFrame(fightLoop);
+  else{
+    bCtx.clearRect(0,0,bW,bH);
+    blasts=[];impacts=[];
+  }
+}
+
+function onBattleOver(){
+  // called when loser finishes falling
+  phase='done';
+  cancelAnimationFrame(fightLoopRaf);
+  if(bCtx)bCtx.clearRect(0,0,bW,bH);
+  blasts=[];impacts=[];
+  // victory hold 1.8s then everyone back to patrol
+  setTimeout(()=>{
+    M1.backToPatrol();
+    M2.backToPatrol();
+    phase='patrol';
+    schedNextFight();
+  },1800);
+}
+
+// ─────────────────────────────────────────────
+//  MASCOT CLASS
+// ─────────────────────────────────────────────
+class Mascot{
+  constructor(cid,btnId,wrapId,startAutoDir){
+    this.cv=document.getElementById(cid);
+    this.ctx=this.cv.getContext('2d');
+    this.btn=document.getElementById(btnId);
+    this.wrap=document.getElementById(wrapId);
+    this._resize();
+    // position
+    this.x=this.MAX/2; this.y=0;
+    this.velY=0; this.onGround=true;
+    this.dir=startAutoDir; this.autoDir=startAutoDir;
+    // walk anim
+    this.wt=0; this.ws=0;
+    // mouse
+    this.mouseIn=false; this.targetX=this.MAX/2;
+    this.idleT=0; this.jumpCd=0; this.landT=0;
+    // mascot state
+    this.mstate='patrol';
+    // battle
+    this.fightDir=1;
+    this.isWinner=false;
+    this.hitsTaken=0; this.maxHits=0;
+    this.shootCd=0;
+    this.fallVX=0; this.fallRot=0;
+    this.battleT=0;
+    this.notifiedOver=false;
+    // sparkle for victory
+    this.sparkAngle=0;
+    this.last=performance.now();
+    this._bind();
+    requestAnimationFrame(t=>this._loop(t));
+  }
+
+  _resize(){
+    this.cv.width=this.btn.offsetWidth||200;
+    this.cv.height=88;
+    this.MAX=this.cv.width-PW-2;
+  }
+
+  _bind(){
+    this.btn.addEventListener('mouseenter',e=>{
+      anyMouseIn=true; this.mouseIn=true;
+      clearTimeout(schedTimer);
+      if(phase==='fighting'||phase==='done'){
+        // interrupt fight
+        phase='interrupted';
+        cancelAnimationFrame(fightLoopRaf);
+        if(bCtx)bCtx.clearRect(0,0,bW,bH);
+        blasts=[];impacts=[];
+        M1.backToPatrol(); M2.backToPatrol();
+      }
+      this._resize();
+      this.mstate='follow';
+      this.targetX=this._mx(e); this.idleT=0;
+    });
+    this.btn.addEventListener('mousemove',e=>{
+      this.targetX=this._mx(e); this.idleT=0;
+      if(this.mstate==='idle')this.mstate='follow';
+    });
+    this.btn.addEventListener('mouseleave',()=>{
+      this.mouseIn=false;
+      anyMouseIn=(M1&&M1.mouseIn)||(M2&&M2.mouseIn);
+      if(!anyMouseIn){
+        this.mstate='patrol';
+        if(phase!=='fighting'&&phase!=='done') schedNextFight();
+      }
+    });
+  }
+
+  _mx(e){
+    const r=this.btn.getBoundingClientRect();
+    return Math.max(2,Math.min(this.MAX,e.clientX-r.left-PW/2));
+  }
+
+  startFight(isWinner,faceDir){
+    this.isWinner=isWinner;
+    this.fightDir=faceDir==='right'?1:-1;
+    this.dir=this.fightDir;
+    this.hitsTaken=0;
+    this.maxHits=isWinner?1:3;    // loser takes more hits
+    this.shootCd=600+Math.random()*500;
+    this.battleT=0;
+    this.notifiedOver=false;
+    this.mstate='fight_charge';
+  }
+
+  receiveHit(){
+    if(this.mstate==='fight_fall')return;
+    this.hitsTaken++;
+    if(this.hitsTaken>=this.maxHits){
+      // start falling
+      this.mstate='fight_fall';
+      this.fallVX=this.fightDir*(-3.8); // knocked back
+      this.fallRot=0;
+      this.battleT=0;
+    } else {
+      this.mstate='fight_hit';
+      this.battleT=320;
+    }
+  }
+
+  backToPatrol(){
+    this.mstate='patrol';
+    this.y=0; this.velY=0; this.onGround=true;
+    this.dir=this.autoDir;
+    this.fallRot=0; this.notifiedOver=false;
+  }
+
+  _doJump(){
+    if(!this.onGround)return;
+    this.velY=-4.2; this.onGround=false; this.jumpCd=0;
+    this.wrap.classList.remove('bounce');
+    void this.wrap.offsetWidth;
+    this.wrap.classList.add('bounce');
+  }
+
+  _loop(now){
+    const dt=Math.min(now-this.last,40); this.last=now;
+    this.jumpCd=Math.max(0,this.jumpCd-dt);
+    this.landT=Math.max(0,this.landT-dt);
+    this.battleT=Math.max(0,this.battleT-dt);
+
+    const ctx=this.ctx;
+    ctx.clearRect(0,0,this.cv.width,88);
+
+    const ms=this.mstate;
+
+    // ── PATROL / FOLLOW / IDLE (normal) ──
+    if(ms==='patrol'||ms==='follow'||ms==='idle'){
+      // vertical
+      if(!this.onGround){
+        this.velY+=0.38; this.y+=this.velY;
+        if(this.y>=0){
+          this.y=0;this.velY=0;this.onGround=true;
+          this.landT=110;this.jumpCd=580;
+          if(ms!=='idle'){}
+        }
+      }
+      if(ms==='patrol'){
+        this.x+=this.autoDir*0.52; this.dir=this.autoDir;
+        if(this.x>=this.MAX)this.autoDir=-1;
+        if(this.x<=2)this.autoDir=1;
+      } else if(ms==='follow'){
+        const dx=this.targetX-this.x;
+        if(Math.abs(dx)>3){
+          this.dir=dx>0?1:-1;
+          this.x+=this.dir*Math.min(Math.abs(dx)*0.14,4.5);
+          this.idleT=0;
+        } else {
+          this.x+=(this.targetX-this.x)*0.15;
+          this.idleT+=dt;
+          if(this.idleT>750)this.mstate='idle';
+        }
+      } else if(ms==='idle'){
+        this.idleT+=dt;
+        if(this.onGround&&this.jumpCd===0) this._doJump();
+      }
+      this.x=Math.max(2,Math.min(this.MAX,this.x));
+
+      // sprite
+      let fr='stand';
+      if(!this.onGround) fr='walk1';
+      else if(ms==='patrol'||ms==='follow'){
+        const mv=ms==='patrol'||Math.abs(this.targetX-this.x)>4;
+        if(mv){this.wt+=dt;if(this.wt>112){this.wt=0;this.ws=1-this.ws;}fr=this.ws?'walk1':'walk2';}
+      }
+      this._drawChar(ctx,fr,Math.round(this.x),GND,this.dir===-1);
+      this._drawShadow(ctx,this.x,1);
+    }
+
+    // ── FIGHT: CHARGE / SHOOT ──
+    else if(ms==='fight_charge'||ms==='fight_shoot'){
+      this.shootCd-=dt;
+      if(this.shootCd<=0&&ms==='fight_charge'){
+        this.mstate='fight_shoot';
+        this.battleT=250;
+        this._firePower();
+        this.shootCd=900+Math.random()*700;
+      }
+      if(ms==='fight_shoot'&&this.battleT<=0) this.mstate='fight_charge';
+      this.x=Math.max(2,Math.min(this.MAX,this.x));
+      this._drawChar(ctx,'charge',Math.round(this.x),GND,this.fightDir===-1);
+      this._drawChargeGlow(ctx);
+      this._drawShadow(ctx,this.x,1);
+    }
+
+    // ── FIGHT: HIT RECOIL ──
+    else if(ms==='fight_hit'){
+      if(this.battleT<=0) this.mstate='fight_charge';
+      this._drawChar(ctx,'hit',Math.round(this.x),GND,this.fightDir===-1);
+      this._drawShadow(ctx,this.x,1);
+    }
+
+    // ── FIGHT: FALL ──
+    else if(ms==='fight_fall'){
+      this.fallVX*=0.93;
+      this.x+=this.fallVX;
+      this.fallRot+=this.fallVX*2.8;
+      this.battleT+=dt;
+      this.x=Math.max(-PW-5,Math.min(this.MAX+PW+5,this.x));
+
+      ctx.save();
+      ctx.translate(Math.round(this.x)+PW/2, GND+PH/2);
+      ctx.rotate(this.fallRot*Math.PI/180);
+      ctx.translate(-PW/2,-PH/2);
+      drawChar(ctx,'fall',0,0,this.fightDir===1);
+      ctx.restore();
+
+      // when nearly stopped, notify battle over (only once)
+      if(Math.abs(this.fallVX)<0.35&&!this.notifiedOver){
+        this.notifiedOver=true;
+        onBattleOver();
+      }
+    }
+
+    // ── FIGHT: VICTORY ──
+    else if(ms==='fight_victory'||ms==='fight_charge'||ms==='fight_shoot'){
+      // victory is set after opponent falls
+    }
+
+    // draw victory if winner and fight over
+    if(ms!=='fight_fall'&&ms!=='patrol'&&ms!=='follow'&&ms!=='idle'&&this.isWinner&&phase==='done'){
+      this.mstate='fight_victory';
+    }
+    if(ms==='fight_victory'){
+      this.sparkAngle+=0.06;
+      this._drawChar(ctx,'victory',Math.round(this.x),GND,this.fightDir===-1);
+      this._drawSparkles(ctx,Math.round(this.x));
+      this._drawShadow(ctx,this.x,1);
+    }
+
+    requestAnimationFrame(t=>this._loop(t));
+  }
+
+  _firePower(){
+    const row=document.getElementById('brow');
+    const rowR=row.getBoundingClientRect();
+    const btnR=this.btn.getBoundingClientRect();
+    const bx=btnR.left-rowR.left+this.x+(this.fightDir===1?PW:0);
+    const by=bH-PH*0.5;
+    const speed=6;
+    blasts.push(new Blast(bx,by,this.fightDir*speed));
+  }
+
+  _drawChar(ctx,name,x,y,flip){drawChar(ctx,name,x,y,flip);}
+
+  _drawChargeGlow(ctx){
+    const gx=this.fightDir===1?this.x+PW:this.x;
+    const gy=GND+PH*0.55;
+    const r=5+Math.sin(Date.now()*0.009)*2.5;
+    ctx.save();
+    const g=ctx.createRadialGradient(gx,gy,0,gx,gy,r*3.5);
+    g.addColorStop(0,'rgba(255,255,255,0.95)');
+    g.addColorStop(0.3,'rgba(196,160,255,0.7)');
+    g.addColorStop(1,'rgba(112,48,255,0)');
+    ctx.globalAlpha=0.85;ctx.fillStyle=g;
+    ctx.beginPath();ctx.arc(gx,gy,r*3.5,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+
+  _drawSparkles(ctx,px){
+    for(let i=0;i<4;i++){
+      const ang=this.sparkAngle+i*1.57;
+      const sx=px+PW/2+Math.cos(ang)*20;
+      const sy=GND+PH*0.25+Math.sin(ang)*12;
+      const r=i%2===0?3.5:2;
+      ctx.save();ctx.globalAlpha=0.9;
+      ctx.fillStyle=i<2?'#fff':'#C4A0FF';
+      ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+      // star rays
+      ctx.save();ctx.globalAlpha=0.5;ctx.strokeStyle='#C4A0FF';ctx.lineWidth=1;
+      for(let j=0;j<4;j++){
+        const ra=ang+j*0.785;
+        ctx.beginPath();ctx.moveTo(sx,sy);
+        ctx.lineTo(sx+Math.cos(ra)*6,sy+Math.sin(ra)*6);ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  _drawShadow(ctx,x,alpha){
+    ctx.globalAlpha=0.18*alpha;ctx.fillStyle='#7016EF';
+    ctx.beginPath();ctx.ellipse(x+PW/2,87,PW*0.4,2.5,0,0,Math.PI*2);
+    ctx.fill();ctx.globalAlpha=1;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+setTimeout(()=>{
+  M1=new Mascot('c1','b1','w1',1);
+  M2=new Mascot('c2','b2','w2',-1);
+  phase='patrol';
+  schedNextFight();
+},120);
+</script>

@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+#features8-root {
+  --f8-background: rgb(2, 2, 3);
+  --f8-foreground: #ffffff;
+  --f8-card: rgba(255, 255, 255, 0.015);
+  --f8-card-foreground: #ffffff;
+  --f8-border: rgba(255, 255, 255, 0.07);
+  --f8-muted: rgba(255, 255, 255, 0.05);
+  --f8-muted-foreground: rgba(255, 255, 255, 0.4);
+  --f8-primary: #a78bfa;
+  --f8-primary-foreground: #0a0a0c;
+  --f8-radius: 18px;
+}

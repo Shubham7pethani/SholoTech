@@ -1,0 +1,4566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SholoTech | Custom Software & Web App Development</title>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      src: url('assets/Redaction_50-Regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    * { margin: 0; padding: 0; outline: none !important; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow-x: hidden; background: rgb(2,2,3); font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+    body::-webkit-scrollbar { display: none; }
+
+    /* ===== INTRO LOADER ===== */
+    #intro-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 100000;
+      background-color: #000;
+      transition: background-color 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: auto;
+    }
+    #intro-loader.reveal {
+      background-color: rgba(0, 0, 0, 0);
+      pointer-events: none;
+    }
+    #intro-loader canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      transform-origin: 50% 50%;
+    }
+
+    /* ===== 3D BACKGROUND ===== */
+    #crt-frame {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    #crt-frame canvas { display: block; width: 100% !important; height: 100% !important; pointer-events: none; }
+
+    /* ===== MOUSE-FOLLOW PURPLE GLOW ===== */
+    .hero-mouse-glow {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background: radial-gradient(circle 90px at var(--mx, 50%) var(--my, 40%), #A855F7 0%, rgba(168, 85, 247, 0.5) 45%, transparent 75%);
+      mix-blend-mode: color;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .hero-mouse-glow.active {
+      opacity: 1;
+    }
+
+    /* ===== HERO WRAPPER ===== */
+    .hero-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ===== HERO OVERLAY ===== */
+    #hero-overlay {
+      position: relative;
+      width: 100%; height: 100%;
+      z-index: 20;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== NAV ===== */
+    /* --p (0 -> 1) is driven directly by scroll position in JS, so the
+       navbar morphs in lockstep with the scroll instead of snapping
+       at a threshold. */
+    .nav {
+      --p: 0;
+      position: fixed;
+      top: calc(var(--p) * 16px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - var(--p) * 32px);
+      max-width: calc(100% - (var(--p) * (100% - 880px)));
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: calc(36px - var(--p) * 12px);
+      padding: calc(24px - var(--p) * 14px) calc(48px - var(--p) * 24px);
+      pointer-events: auto;
+      border-radius: calc(var(--p) * 100px);
+      background: rgba(20, 20, 24, calc(var(--p) * 0.55));
+      -webkit-backdrop-filter: blur(calc(var(--p) * 20px));
+      backdrop-filter: blur(calc(var(--p) * 20px));
+      border: 1px solid rgba(255, 255, 255, calc(var(--p) * 0.08));
+      box-shadow: 0 8px 32px rgba(0, 0, 0, calc(var(--p) * 0.45));
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: calc(10px - var(--p) * 2px);
+    }
+    .nav-brand-logo {
+      height: calc(44px - var(--p) * 14px);
+      width: auto;
+      display: block;
+    }
+    .nav-brand-text {
+      font-size: calc(13px - var(--p) * 1px);
+      font-weight: 500;
+      color: #fff;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: calc(36px - var(--p) * 14px);
+    }
+    .nav-links a {
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      letter-spacing: 0.5px;
+      transition: color 0.2s ease;
+    }
+    .nav-links a:hover {
+      color: rgba(255,255,255,0.9);
+    }
+
+    /* ===== HAMBURGER MENU (mobile) ===== */
+    .nav-hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 32px;
+      height: 32px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      pointer-events: auto;
+      z-index: 100;
+    }
+    .nav-hamburger span {
+      display: block;
+      width: 100%;
+      height: 1.5px;
+      background: rgba(255,255,255,0.8);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .nav-hamburger.open span:nth-child(1) {
+      transform: translateY(6.5px) rotate(45deg);
+    }
+    .nav-hamburger.open span:nth-child(2) {
+      opacity: 0;
+    }
+    .nav-hamburger.open span:nth-child(3) {
+      transform: translateY(-6.5px) rotate(-45deg);
+    }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(2, 2, 3, 0.95);
+      z-index: 50;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+    }
+    .mobile-menu.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .mobile-menu a {
+      font-size: 28px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+      letter-spacing: 0.5px;
+      padding: 16px 0;
+      transition: color 0.2s ease;
+    }
+    .mobile-menu a:hover {
+      color: rgba(255,255,255,0.95);
+    }
+    .mobile-menu .mobile-cta {
+      margin-top: 24px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #000;
+      background: #fff;
+      padding: 14px 36px;
+      border-radius: 100px;
+      text-decoration: none;
+      letter-spacing: 0.3px;
+    }
+    .nav-cta {
+      font-size: 13px;
+      font-weight: 500;
+      color: #000 !important;
+      background: #fff;
+      padding: calc(10px - var(--p) * 2px) calc(24px - var(--p) * 6px);
+      border-radius: 100px;
+      text-decoration: none;
+      letter-spacing: 0.3px;
+      transition: opacity 0.25s ease;
+      border: 1px solid rgba(255,255,255,0.15);
+      will-change: transform;
+    }
+    .nav-cta:hover {
+      opacity: 0.85;
+      color: #000 !important;
+    }
+
+    /* ===== BOTTOM FADE ===== */
+    .hero-fade {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 55%;
+      background: linear-gradient(to top, rgb(2,2,3) 0%, rgb(2,2,3) 8%, transparent 100%);
+      z-index: 5;
+      pointer-events: none !important;
+    }
+
+    /* ===== TOP FADE ===== */
+    .hero-fade-top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 20%;
+      background: linear-gradient(to bottom, rgb(2,2,3) 0%, rgb(2,2,3) 5%, transparent 100%);
+      z-index: 5;
+      pointer-events: none !important;
+    }
+
+    /* ===== HERO CONTENT ===== */
+    .hero-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0 48px 44px;
+      pointer-events: none;
+    }
+
+    .hero-h1 {
+      font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+      font-size: clamp(56px, 11vw, 152px);
+      font-weight: 400;
+      color: #fff;
+      line-height: 0.93;
+      letter-spacing: -3px;
+      margin-bottom: 28px;
+      width: 100%;
+      text-shadow: none;
+    }
+    .hero-h1 .thin {
+      color: rgba(255, 255, 255, 0.55);
+    }
+    .hero-h1 .hero-line {
+      display: block;
+    }
+    .hero-h1 .word {
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: top;
+      padding-bottom: 0.25em;
+      margin-bottom: -0.25em;
+    }
+    .hero-h1 .word-inner {
+      display: inline-block;
+      transform: translateY(115%);
+      opacity: 0;
+      filter: blur(10px);
+      transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.7s ease, filter 0.7s ease;
+      transition-delay: calc(0.3s + var(--i) * 0.07s);
+    }
+    .hero-h1.anim-in .word-inner {
+      transform: translateY(0);
+      opacity: 1;
+      filter: blur(0);
+    }
+    .rotate-text {
+      display: inline-block;
+      color: #A78BFA;
+      padding-bottom: 0.25em;
+      margin-bottom: -0.25em;
+      clip-path: inset(0 0 0 0);
+      transition: clip-path 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    /* Stat counters below headline */
+    .hero-stats {
+      display: flex;
+      align-items: center;
+      gap: 48px;
+      margin-bottom: 24px;
+      pointer-events: none;
+    }
+    .hero-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .hero-stat .hero-stat-val {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(28px, 3.2vw, 42px);
+      font-weight: 400;
+      color: #fff;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .hero-stat-label {
+      font-size: 11px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* Row below headline: description left, buttons right */
+    .hero-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 40px;
+      pointer-events: none;
+    }
+    .hero-sub {
+      font-size: 13px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.42);
+      line-height: 1.8;
+      max-width: 600px;
+      text-shadow: 0 2px 16px rgba(2,2,3,1), 0 4px 32px rgba(2,2,3,1), 0 0 60px rgba(2,2,3,1);
+    }
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      pointer-events: auto;
+    }
+    .btn-primary {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 28px;
+      background: transparent;
+      color: #000;
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid #fff;
+      border-radius: 100px;
+      cursor: pointer;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      overflow: hidden;
+      will-change: transform;
+      isolation: isolate;
+    }
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      border-radius: inherit;
+      transform: scaleX(1);
+      transform-origin: left center;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: -1;
+      will-change: transform;
+    }
+    .btn-primary:hover::before {
+      transform: scaleX(0);
+      transform-origin: right center;
+    }
+    .btn-primary:hover {
+      color: #fff;
+    }
+    .btn-primary svg { width: 13px; height: 13px; }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 28px;
+      background: transparent;
+      color: rgba(255,255,255,0.55);
+      font-family: 'Geist', sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 100px;
+      cursor: pointer;
+      letter-spacing: 0.2px;
+      transition: border-color 0.25s ease, color 0.25s ease;
+      white-space: nowrap;
+      will-change: transform;
+    }
+    .btn-secondary:hover {
+      border-color: rgba(255,255,255,0.45);
+      color: rgba(255,255,255,0.9);
+    }
+
+    /* ===== INTERACTIVE MASCOT BUTTONS ===== */
+    .btn-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      position: relative;
+      pointer-events: auto;
+    }
+    .btn-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .btn-wrap.shake {
+      animation: shk 0.4s ease;
+    }
+    @keyframes shk {
+      0% { transform: translateX(0); }
+      15% { transform: translateX(-6px); }
+      30% { transform: translateX(6px); }
+      45% { transform: translateX(-5px); }
+      60% { transform: translateX(5px); }
+      80% { transform: translateX(-2px); }
+      100% { transform: translateX(0); }
+    }
+    .btn-wrap.bounce {
+      animation: bnc 0.3s cubic-bezier(.36,.07,.19,.97);
+    }
+    @keyframes bnc {
+      0% { transform: translateY(0); }
+      25% { transform: translateY(-7px); }
+      55% { transform: translateY(2px); }
+      78% { transform: translateY(-3px); }
+      100% { transform: translateY(0); }
+    }
+    .mstage {
+      position: absolute;
+      bottom: calc(100% - 2px);
+      left: 0;
+      width: 100%;
+      height: 88px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .btn-mascot {
+      font-family: 'Geist', -apple-system, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 14px 32px;
+      border-radius: 9999px;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      white-space: nowrap;
+      letter-spacing: 0.2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+    }
+    .btn-mascot-w {
+      position: relative;
+      background: transparent;
+      color: #000000;
+      border: 1px solid #ffffff;
+      isolation: isolate;
+      overflow: hidden;
+      transition: color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+    }
+    .btn-mascot-w::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+      border-radius: inherit;
+      transform: scaleX(1);
+      transform-origin: left center;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: -1;
+      will-change: transform;
+    }
+    .btn-mascot-w:hover::before {
+      transform: scaleX(0);
+      transform-origin: right center;
+    }
+    .btn-mascot-w:hover {
+      color: #ffffff;
+    }
+    .btn-mascot-b {
+      background: rgba(26, 26, 26, 0.85);
+      color: #ffffff;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.13);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .btn-mascot-b:hover {
+      background: rgba(40, 40, 40, 0.95);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+    }
+    #battle-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: #9B6DFF;
+      opacity: 0;
+      transition: opacity 0.06s;
+      z-index: 99;
+    }
+    @media (max-width: 768px) {
+      .btn-mascot {
+        font-size: 13px;
+        padding: 12px 24px;
+      }
+      .btn-row {
+        gap: 12px;
+      }
+    }
+
+    /* ===== SCROLLING TICKER BANNER ===== */
+    .hero-ticker-banner {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 64px;
+      background: rgba(2, 2, 3, 0.85);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      overflow: hidden;
+      z-index: 25;
+      pointer-events: auto;
+      
+      /* Entrance animation */
+      opacity: 0;
+      transform: translateY(15px);
+      transition: opacity 1s cubic-bezier(0.25, 0.1, 0.25, 1), transform 1s cubic-bezier(0.25, 0.1, 0.25, 1);
+      transition-delay: 1.2s;
+    }
+    .hero-ticker-banner.anim-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .ticker-label-wrap {
+      display: flex;
+      align-items: center;
+      padding: 0 24px 0 48px;
+      flex-shrink: 0;
+      height: 100%;
+    }
+    .ticker-label {
+      font-family: 'Geist', -apple-system, sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.55);
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .ticker-divider {
+      width: 1px;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.12);
+      flex-shrink: 0;
+    }
+    .ticker-scroll-container {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      position: relative;
+      height: 100%;
+      mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    }
+    .ticker-track {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      white-space: nowrap;
+      animation: ticker-slide 120s linear infinite;
+      will-change: transform;
+      padding-left: 24px;
+    }
+    .ticker-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Geist', -apple-system, sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.45);
+      letter-spacing: 1.5px;
+      transition: color 0.25s ease, transform 0.25s ease;
+      cursor: default;
+    }
+    .ticker-item:hover {
+      color: rgba(255, 255, 255, 0.95);
+      transform: translateY(-1px);
+    }
+    .ticker-icon {
+      height: 15px;
+      width: auto;
+      flex-shrink: 0;
+      transition: transform 0.25s ease, filter 0.25s ease;
+      filter: grayscale(1) opacity(0.5);
+    }
+    .ticker-item:hover .ticker-icon {
+      filter: grayscale(0) opacity(1);
+      transform: scale(1.1);
+    }
+    .ticker-icon.brand-icon {
+      filter: none;
+      opacity: 0.85;
+    }
+    .ticker-icon.brand-icon-green {
+      filter: none;
+      opacity: 0.85;
+    }
+    .ticker-item:hover .ticker-icon.brand-icon {
+      filter: none;
+      opacity: 1;
+    }
+    .ticker-item:hover .ticker-icon.brand-icon-green {
+      filter: none;
+      opacity: 1;
+    }
+    .ticker-bullet {
+      color: rgba(255, 255, 255, 0.15);
+      font-size: 14px;
+      pointer-events: none;
+      user-select: none;
+    }
+    @keyframes ticker-slide {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+      100% {
+        transform: translate3d(-50%, 0, 0);
+      }
+    }
+    
+    @media (max-width: 900px) {
+      .ticker-label-wrap {
+        padding: 0 16px 0 24px;
+      }
+      .ticker-label {
+        font-size: 11px;
+      }
+      .ticker-track {
+        gap: 20px;
+        animation-duration: 20s;
+      }
+      .ticker-item {
+        font-size: 10px;
+        gap: 8px;
+      }
+    }
+    @media (max-width: 600px) {
+      .hero-ticker-banner {
+        height: 52px;
+      }
+      .ticker-label-wrap {
+        padding: 0 12px 0 16px;
+      }
+      .ticker-label {
+        display: none;
+      }
+      .ticker-divider {
+        display: none;
+      }
+      .ticker-scroll-container {
+        mask-image: linear-gradient(to right, transparent 0%, #000 5%, #000 95%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 5%, #000 95%, transparent 100%);
+      }
+    }
+
+
+    /* ===== SCROLL TO EXPLORE ===== */
+    .scroll-cta {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 12;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .scroll-cta-text {
+      font-size: 10px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .scroll-cta-line {
+      width: 1px;
+      height: 32px;
+      position: relative;
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+    }
+    .scroll-cta-line::after {
+      content: '';
+      position: absolute;
+      top: -100%;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.35), transparent);
+      animation: scrollDrop 2s ease-in-out infinite;
+    }
+    @keyframes scrollDrop {
+      0% { top: -100%; }
+      50% { top: 100%; }
+      100% { top: 100%; }
+    }
+
+    /* Scroll CTA entrance animation */
+    .scroll-cta {
+      opacity: 0;
+      transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+      transition-delay: 1.8s;
+    }
+    .scroll-cta.anim-in {
+      opacity: 1;
+    }
+
+    /* ===== SECTIONS ===== */
+    .section {
+      position: relative;
+      z-index: 10;
+      background: rgb(2,2,3);
+    }
+
+    .section-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .section-whatwedo {
+      padding: 160px 48px 120px;
+    }
+    .section-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .section-heading {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(36px, 5.5vw, 72px);
+      font-weight: 400;
+      color: #fff;
+      line-height: 1.05;
+      letter-spacing: -1.5px;
+      max-width: 700px;
+      margin-bottom: 80px;
+    }
+    .section-heading .thin { color: rgba(255,255,255,0.3); }
+
+    .whatwedo-pin {
+      position: relative;
+      height: 380vh;
+    }
+    .whatwedo-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 80px;
+      align-items: start;
+      position: sticky;
+      top: 140px;
+    }
+    .whatwedo-list {
+      position: relative;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .whatwedo-indicator {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: #A78BFA;
+      box-shadow: 0 0 12px rgba(167,139,250,0.6);
+      transform: translateY(0);
+      transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+      pointer-events: none;
+    }
+    .whatwedo-item {
+      position: relative;
+      display: flex;
+      align-items: baseline;
+      gap: 24px;
+      padding: 34px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      cursor: pointer;
+    }
+    .whatwedo-num {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 15px;
+      min-width: 28px;
+      color: rgba(255,255,255,0.18);
+      transition: color 0.5s ease;
+    }
+    .whatwedo-name {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(20px, 2.6vw, 30px);
+      font-weight: 400;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: -0.5px;
+      transition: color 0.5s ease;
+    }
+    .whatwedo-item.active .whatwedo-num { color: #A78BFA; }
+    .whatwedo-item.active .whatwedo-name { color: #fff; }
+    .whatwedo-item-detail { display: none; }
+
+    .whatwedo-panel {
+      position: sticky;
+      top: 180px;
+      min-height: 440px;
+    }
+    .whatwedo-panel-inner {
+      position: relative;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .whatwedo-panel-inner.switching {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    .whatwedo-bg-icon {
+      position: absolute;
+      top: -30px;
+      right: -10px;
+      width: 300px;
+      height: 300px;
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .whatwedo-bg-icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: #A78BFA;
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .whatwedo-tag {
+      position: relative;
+      z-index: 1;
+      font-size: 14px;
+      font-weight: 500;
+      color: #A78BFA;
+      letter-spacing: 0.5px;
+      margin-bottom: 32px;
+    }
+    .whatwedo-detail-heading {
+      position: relative;
+      z-index: 1;
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(42px, 5.5vw, 76px);
+      font-weight: 400;
+      color: #fff;
+      line-height: 1.15;
+      letter-spacing: -1.5px;
+      margin-bottom: 28px;
+    }
+    .whatwedo-detail-desc {
+      position: relative;
+      z-index: 1;
+      font-size: 16px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.85;
+      max-width: 500px;
+      margin-bottom: 40px;
+    }
+    .whatwedo-tags {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .whatwedo-tags span {
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.55);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 100px;
+      padding: 9px 18px;
+    }
+
+    /* Features bento section (React) */
+    .section-feat8 {
+      padding: 0 48px 160px;
+    }
+
+    /* Particle text section */
+    .section-particles {
+      padding: 0 48px 160px;
+    }
+    .section-particles .section-inner {
+      text-align: center;
+    }
+    .section-particles .section-heading {
+      max-width: 100%;
+    }
+    .particle-canvas-wrap {
+      margin: 0 -48px;
+    }
+    .particle-canvas-wrap canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      cursor: pointer;
+    }
+    .particle-caption {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* Dot grid showcase section */
+    .section-dotgrid {
+      position: relative;
+      padding: 140px 48px;
+      overflow: hidden;
+    }
+    .dotgrid-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .section-dotgrid .section-inner {
+      position: relative;
+      z-index: 1;
+    }
+    .section-dotgrid .section-label {
+      text-align: center;
+    }
+    .section-dotgrid .section-heading {
+      max-width: 100%;
+      text-align: center;
+      margin: 0 auto 64px;
+    }
+    .dotgrid-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 28px;
+      max-width: 920px;
+      margin: 0 auto;
+    }
+    .dotgrid-card {
+      position: relative;
+      padding: 48px 32px;
+      text-align: center;
+      transition: transform 0.4s ease;
+    }
+    .dotgrid-card:hover {
+      transform: translateY(-4px);
+    }
+    .dotgrid-badge {
+      display: inline-flex;
+      padding: 6px 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 24px;
+    }
+    .dotgrid-card h3 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-weight: 400;
+      font-size: 32px;
+      color: #fff;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .dotgrid-sub {
+      font-size: 14px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 28px;
+    }
+
+    /* Research section */
+    .section-research {
+      padding: 120px 48px 0;
+    }
+    .section-research .section-inner {
+      display: flex;
+      flex-direction: column;
+    }
+    .research-content {
+      padding: 0 0 40px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .research-list {
+      display: flex;
+      gap: 48px;
+    }
+    .research-item {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      flex: 1;
+      cursor: default;
+      padding: 20px;
+      border-radius: 12px;
+      transition: background 0.3s ease;
+    }
+    .research-item:hover {
+      background: rgba(255,255,255,0.03);
+    }
+    .research-item.active .research-num {
+      color: rgba(255,255,255,0.5);
+    }
+    .research-item.active .research-item-title {
+      color: rgba(255,255,255,1);
+    }
+    .research-num {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 32px;
+      color: rgba(255,255,255,0.12);
+      line-height: 1;
+      flex-shrink: 0;
+      width: 40px;
+    }
+    .research-item-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .research-item-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.8);
+    }
+    .research-item-desc {
+      font-size: 13px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.7;
+    }
+    .research-canvas-wrap {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      height: 360px;
+      background: rgb(2,2,3);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-top: 48px;
+    }
+    .research-canvas-wrap canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+      pointer-events: none;
+      touch-action: auto;
+      opacity: 0.35;
+    }
+
+    /* Numbers section */
+    .section-numbers {
+      padding: 160px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .section-numbers .section-inner {
+      position: relative;
+      z-index: 2;
+    }
+    .numbers-canvas-wrap {
+      display: none;
+    }
+    .numbers-content {
+      position: relative;
+    }
+    .numbers-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 48px;
+      margin-top: 80px;
+    }
+    .number-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .number-val {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(48px, 6vw, 80px);
+      font-weight: 400;
+      color: #fff;
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+    .number-label {
+      font-size: 13px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.5;
+    }
+    .number-divider {
+      width: 32px;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+      margin: 8px 0;
+    }
+
+    /* What We Build / Floating Icons section */
+    .section-analytics {
+      padding: 160px 48px;
+    }
+    .section-analytics .section-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .section-analytics .section-label {
+      text-align: center;
+    }
+    .section-analytics .section-heading {
+      max-width: 760px;
+      margin: 0 auto 20px;
+    }
+    .products-sub {
+      font-size: 14px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.8;
+      max-width: 520px;
+      margin: 0 auto 36px;
+    }
+    .floaticons-stage {
+      position: relative;
+      width: 100%;
+      min-height: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .floaticons-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    .floaticons-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* CTA section */
+    .section-cta {
+      position: relative;
+      padding: 160px 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .cta-hills-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .section-cta .section-inner {
+      position: relative;
+      z-index: 1;
+    }
+    .cta-heading {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(40px, 6vw, 88px);
+      font-weight: 400;
+      color: #fff;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      max-width: 800px;
+      margin-bottom: 24px;
+    }
+    .cta-heading .thin { color: rgba(255,255,255,0.3); }
+    .cta-sub {
+      font-size: 14px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.7;
+      max-width: 480px;
+      margin-bottom: 48px;
+    }
+    .cta-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* Footer */
+    .footer {
+      position: relative;
+      z-index: 10;
+      background: rgb(2,2,3);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 100px 48px 0;
+      overflow: hidden;
+    }
+    .footer-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 48px;
+      flex-wrap: wrap;
+      padding-bottom: 80px;
+    }
+    .footer-heading {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 400;
+      color: #fff;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      max-width: 420px;
+    }
+    .footer-heading .thin { color: rgba(255,255,255,0.3); }
+    .footer-columns {
+      display: flex;
+      gap: 64px;
+    }
+    .footer-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .footer-col a {
+      font-size: 14px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.45);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .footer-col a:hover { color: #fff; }
+    .footer-wordmark-wrap {
+      text-align: center;
+      margin: 0 -48px;
+    }
+    .footer-wordmark {
+      font-family: 'Geist', sans-serif;
+      font-weight: 600;
+      font-size: clamp(64px, 15vw, 220px);
+      line-height: 1;
+      letter-spacing: -0.03em;
+      margin: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.02) 85%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      white-space: nowrap;
+    }
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+      padding: 32px 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .footer-dot {
+      width: 6px; height: 6px;
+      background: rgba(255,255,255,0.3);
+    }
+    .footer-brand {
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .footer-bottom-links {
+      display: flex;
+      gap: 24px;
+    }
+    .footer-bottom-links a {
+      font-size: 12px;
+      color: rgba(255,255,255,0.35);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .footer-bottom-links a:hover { color: #fff; }
+    .footer-right {
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 0.3px;
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.35s; }
+    .reveal-delay-5 { transition-delay: 0.4s; }
+    .reveal-delay-6 { transition-delay: 0.5s; }
+
+    .hero-scroll .status-dot {
+      width: 6px;
+      height: 6px;
+      background: rgba(100, 255, 160, 0.8);
+      border-radius: 50%;
+      animation: statusPulse 2s ease-in-out infinite;
+    }
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(100, 255, 160, 0.4); }
+      50% { opacity: 0.4; box-shadow: 0 0 2px rgba(100, 255, 160, 0.1); }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .nav { padding: 16px 24px; }
+      .nav-links { display: none; }
+      .nav-hamburger { display: flex; }
+      .mobile-menu { display: flex; }
+      .hero-content { padding: 0 24px 32px; }
+      .hero-h1 { font-size: clamp(44px, 13vw, 72px); letter-spacing: -1px; margin-bottom: 24px; }
+      .hero-row { flex-direction: column; align-items: flex-start; gap: 20px; }
+      .hero-sub { font-size: 12px; max-width: 100%; }
+      .hero-bottom { padding: 16px 24px; }
+      .hero-stats { gap: 24px; }
+      .hero-stat-val { font-size: 14px; }
+      .hero-stat-label { font-size: 9px; }
+      .hero-scroll { display: none; }
+      .btn-primary, .btn-secondary { font-size: 12px; padding: 11px 22px; }
+
+      .section-whatwedo { padding: 100px 24px 80px; }
+      .section-heading { margin-bottom: 48px; }
+      .section-feat8 { padding: 0 24px 100px; }
+      .section-particles { padding: 0 24px 100px; }
+      .particle-canvas-wrap { margin: 0 -24px; }
+      .section-dotgrid { padding: 100px 24px; }
+      .dotgrid-cards { grid-template-columns: 1fr; gap: 20px; }
+      .dotgrid-card { padding: 36px 24px; }
+      .section-research { padding: 100px 24px 0; }
+      .research-list { flex-direction: column; gap: 32px; }
+      .research-canvas-wrap { height: 280px; }
+      .section-numbers { padding: 100px 24px; }
+      .numbers-grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+      .section-analytics { padding: 100px 24px; }
+      .products-sub { font-size: 12px; margin-bottom: 28px; }
+      .floaticons-stage { min-height: 520px; }
+      .section-cta { padding: 100px 24px; }
+      .cta-actions { flex-direction: column; }
+      .footer { padding: 64px 24px 0; }
+      .footer-top { flex-direction: column; gap: 40px; padding-bottom: 56px; }
+      .footer-columns { gap: 40px; }
+      .footer-wordmark-wrap { margin: 0 -24px; }
+      .footer-bottom { flex-direction: column; align-items: flex-start; gap: 16px; padding: 24px 0; }
+    }
+
+    @media (max-width: 900px) {
+      .whatwedo-pin { height: auto; }
+      .whatwedo-layout { grid-template-columns: 1fr; gap: 0; position: static; top: auto; }
+      .whatwedo-panel { display: none; }
+      .whatwedo-indicator { display: none; }
+      .whatwedo-bg-icon { display: none; }
+      .whatwedo-item { flex-wrap: wrap; cursor: default; padding: 32px 0; }
+      .whatwedo-item .whatwedo-num,
+      .whatwedo-item.active .whatwedo-num { color: rgba(167,139,250,0.7); }
+      .whatwedo-item .whatwedo-name,
+      .whatwedo-item.active .whatwedo-name { color: #fff; }
+      .whatwedo-item-detail {
+        display: block;
+        flex-basis: 100%;
+        width: 100%;
+        margin-top: 20px;
+      }
+      .whatwedo-tag { margin-bottom: 16px; }
+      .whatwedo-detail-heading { font-size: clamp(28px, 9vw, 44px); margin-bottom: 16px; }
+      .whatwedo-detail-desc { max-width: 100%; font-size: 14px; margin-bottom: 24px; }
+    }
+
+    /* ===== ENTRANCE ANIMATIONS ===== */
+    #crt-frame {
+      opacity: 0;
+      transition: opacity 2.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+      transition-delay: 0.8s;
+    }
+    #crt-frame.visible {
+      opacity: 1;
+    }
+
+    .nav-brand, .nav-links a, .nav-links .nav-cta, .nav-hamburger {
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nav-brand.anim-in, .nav-links a.anim-in, .nav-links .nav-cta.anim-in, .nav-hamburger.anim-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* Nav link delays */
+    .nav-brand { transition-delay: 0.1s; }
+    .nav-links a:nth-child(1) { transition-delay: 0.18s; }
+    .nav-links a:nth-child(2) { transition-delay: 0.26s; }
+    .nav-links a:nth-child(3) { transition-delay: 0.34s; }
+    .nav-links a:nth-child(4) { transition-delay: 0.42s; }
+    .nav-links .nav-cta { transition-delay: 0.5s; }
+    .nav-hamburger { transition-delay: 0.2s; }
+
+
+    .hero-sub {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 1.0s cubic-bezier(0.16, 1, 0.3, 1), transform 1.0s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: 0.5s;
+      will-change: transform, opacity;
+    }
+    .hero-sub.anim-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hero-actions {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 1.0s cubic-bezier(0.16, 1, 0.3, 1), transform 1.0s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: 0.65s;
+      will-change: transform, opacity;
+    }
+    .hero-actions.anim-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hero-stat {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .hero-stat:nth-child(1) { transition-delay: 0.8s; }
+    .hero-stat:nth-child(2) { transition-delay: 0.9s; }
+    .hero-stat:nth-child(3) { transition-delay: 1.0s; }
+    .hero-stat.anim-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hero-scroll {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: 1.1s;
+      gap: 10px;
+    }
+    .hero-scroll.anim-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hero-bottom {
+      will-change: transform;
+    }
+
+    .hero-fade, .hero-fade-top {
+      opacity: 0;
+      transition: opacity 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: 0.4s;
+    }
+    .hero-fade.anim-in, .hero-fade-top.anim-in {
+      opacity: 1;
+    }
+
+    /* GPU layer promotion for overlay — prevents canvas repaints */
+    #hero-overlay, .hero-fade, .hero-fade-top {
+      will-change: auto;
+      transform: translateZ(0);
+    }
+
+    /* Prevent text selection from triggering overlay repaints during interaction */
+    #hero-overlay, #hero-overlay * {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    /* Allow selection only on actual text content when deliberately clicked */
+    .hero-h1, .hero-sub, .hero-stat-val, .hero-stat-label {
+      -webkit-user-select: text;
+      user-select: text;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">
+    <img src="logowithoutbackground.png" alt="SholoTech Logo" class="nav-brand-logo" />
+    <span class="nav-brand-text">SholoTech</span>
+  </div>
+  <div class="nav-links">
+    <a href="#">Services</a>
+    <a href="#">Our Work</a>
+    <a href="#">About Us</a>
+    <a href="#">Careers</a>
+    <a href="#" class="nav-cta">Start Project</a>
+  </div>
+  <button class="nav-hamburger" id="hamburger" aria-label="Menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#" class="mobile-link">Services</a>
+  <a href="#" class="mobile-link">Our Work</a>
+  <a href="#" class="mobile-link">About Us</a>
+  <a href="#" class="mobile-link">Careers</a>
+  <a href="#" class="mobile-cta">Start Project</a>
+</div>
+
+<!-- INTRO LOADER -->
+<div id="intro-loader">
+  <canvas id="intro-cv"></canvas>
+</div>
+<script>
+(function(){
+  const cv = document.getElementById('intro-cv');
+  const G = cv.getContext('2d');
+
+  let W=window.innerWidth, H=window.innerHeight;
+  const dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr; cv.height=H*dpr;
+  G.scale(dpr,dpr);
+
+  let Cx=W/2, Cy=H/2;
+
+  const PURPLE='#7016EF';
+  let LR=Math.min(W,H)*0.34;
+  let SW=LR*(18/170);
+  let DR=LR*(9/170);
+  let FONT=Math.round(LR*(16/170));
+
+  const RAW=[
+    {a:-88,  nd:0.953, label:'Innovation' },
+    {a:-44.8,nd:0.888, label:'Precision'  },
+    {a:0.2,  nd:0.942, label:'Growth'     },
+    {a:88,   nd:0.953, label:'Reliability'},
+    {a:179.8,nd:0.940, label:'Reach'      },
+    {a:133.1,nd:0.860, label:'Excellence' },
+  ];
+
+  function r2d(a){return a*Math.PI/180}
+
+  let DOTS = [];
+  function calcLayout() {
+    DOTS = RAW.map(d=>{
+      const dist=d.nd*LR;
+      const x=Cx+Math.cos(r2d(d.a))*dist;
+      const y=Cy+Math.sin(r2d(d.a))*dist;
+      const nx=Math.cos(r2d(d.a));
+      const ny=Math.sin(r2d(d.a));
+      const OFF=LR*(36/170);
+      let tx=x+nx*OFF;
+      let ty=y+ny*OFF;
+      let align='center';
+      if(nx<-0.4) align='right';
+      if(nx>0.4)  align='left';
+      let base='middle';
+      if(ny<-0.35) base='bottom';
+      if(ny>0.35)  base='top';
+      return {x,y,nx,ny,label:d.label,tx,ty,align,base};
+    });
+  }
+  calcLayout();
+
+  const RAYS_N=[
+    [0.026,-0.178, 0.039,-0.773],
+    [-0.107,-0.139,-0.622,-0.673],
+    [0.158,-0.147, 0.525,-0.521],
+    [-0.158,0.005,-0.757,0.005],
+    [0.226,0.004,  0.778,0.007],
+    [-0.110,0.134,-0.475,0.523],
+    [0.169,0.143,  0.697,0.655],
+    [0.024,0.190,  0.041,0.781],
+  ];
+  let RAYS = [];
+  function calcRays() {
+    RAYS=RAYS_N.map(r=>({
+      x1:Cx+r[0]*LR, y1:Cy+r[1]*LR,
+      x2:Cx+r[2]*LR, y2:Cy+r[3]*LR,
+    }));
+  }
+  calcRays();
+
+  const RAY_ORDER=[0,7,3,4,1,2,5,6];
+
+  function easeOutCubic(t){return 1-Math.pow(1-t,3)}
+  function easeOutExpo(t){return t===1?1:1-Math.pow(2,-10*t)}
+  function easeBack(t){const c1=1.4; const c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)}
+  function pr(t,s,d){return Math.max(0,Math.min(1,(t-s)/d))}
+
+  const particles = [];
+  const particleCount = 45;
+  for (let i = 0; i < particleCount; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.12,
+      vy: (Math.random() - 0.5) * 0.12,
+      size: Math.random() * 1.5 + 0.6,
+      alpha: Math.random() * 0.35 + 0.1,
+      pulseSpeed: Math.random() * 0.015 + 0.005,
+      pulsePhase: Math.random() * Math.PI * 2
+    });
+  }
+
+  function drawAmbientParticles() {
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0) p.x = W;
+      if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H;
+      if (p.y > H) p.y = 0;
+      
+      p.pulsePhase += p.pulseSpeed;
+      const pulseAlpha = p.alpha * (0.65 + 0.35 * Math.sin(p.pulsePhase));
+      
+      G.save();
+      G.fillStyle = 'rgba(157, 109, 255, ' + pulseAlpha + ')';
+      G.shadowBlur = 3;
+      G.shadowColor = PURPLE;
+      G.beginPath();
+      G.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      G.fill();
+      G.restore();
+    });
+  }
+
+  function drawCircularGrid(t) {
+    G.save();
+    const radii = [LR * 0.45, LR * 0.95, LR * 1.45];
+    radii.forEach((r, idx) => {
+      const alpha = 0.025 * (1 - r / (LR * 1.85)) * (0.75 + 0.25 * Math.sin(t * 0.0006 + idx));
+      G.strokeStyle = 'rgba(112, 22, 239, ' + alpha + ')';
+      G.lineWidth = 0.75;
+      
+      G.beginPath();
+      G.arc(Cx, Cy, r, 0, Math.PI * 2);
+      G.stroke();
+      
+      G.strokeStyle = 'rgba(112, 22, 239, ' + (alpha * 0.6) + ')';
+      G.beginPath();
+      G.moveTo(Cx, Cy - r - 5); G.lineTo(Cx, Cy - r + 5);
+      G.moveTo(Cx, Cy + r - 5); G.lineTo(Cx, Cy + r + 5);
+      G.moveTo(Cx - r - 5, Cy); G.lineTo(Cx - r + 5, Cy);
+      G.moveTo(Cx + r - 5, Cy); G.lineTo(Cx + r + 5, Cy);
+      G.stroke();
+    });
+    G.restore();
+  }
+
+  function drawDot(x,y,r,a){
+    if(a<=0||r<=0)return;
+    G.save();
+    G.globalAlpha=a;
+    G.fillStyle=PURPLE;
+    G.shadowBlur = r * 1.5;
+    G.shadowColor = PURPLE;
+    G.beginPath();G.arc(x,y,r,0,Math.PI*2);G.fill();
+    G.restore();
+  }
+
+  function drawLabel(d, a, spacing) {
+    if (a <= 0) return;
+    G.save();
+    G.globalAlpha = a;
+    
+    G.shadowBlur = 6;
+    G.shadowColor = 'rgba(112, 22, 239, 0.3)';
+    G.font = '600 ' + FONT + 'px "Geist", -apple-system, sans-serif';
+    G.fillStyle = '#ffffff';
+    
+    const text = d.label.toUpperCase();
+    
+    let totalWidth = 0;
+    for (let i = 0; i < text.length; i++) {
+      totalWidth += G.measureText(text[i]).width;
+      if (i < text.length - 1) totalWidth += spacing;
+    }
+    
+    let startX = d.tx;
+    if (d.align === 'right') startX = d.tx - totalWidth;
+    else if (d.align === 'center') startX = d.tx - totalWidth / 2;
+    
+    G.textBaseline = d.base;
+    
+    let curX = startX;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      G.fillText(char, curX, d.ty);
+      curX += G.measureText(char).width + spacing;
+    }
+    
+    G.restore();
+  }
+
+  function drawRay(r,p,a){
+    if(p<=0||a<=0)return;
+    G.save();
+    G.globalAlpha=a;
+    G.strokeStyle=PURPLE;
+    G.lineWidth=SW;
+    G.lineCap='round';
+    G.shadowBlur=SW * 0.9;
+    G.shadowColor=PURPLE;
+    G.beginPath();
+    G.moveTo(r.x1,r.y1);
+    G.lineTo(r.x1+(r.x2-r.x1)*p,r.y1+(r.y2-r.y1)*p);
+    G.stroke();
+    G.restore();
+  }
+
+
+  const streaks = [];
+  function drawWarpStreaks(warpP) {
+    if (streaks.length === 0) {
+      for (let i = 0; i < 45; i++) {
+        streaks.push({
+          angle: Math.random() * Math.PI * 2,
+          dist: Math.random() * LR * 0.4,
+          speed: Math.random() * 9 + 4,
+          len: Math.random() * 25 + 10,
+          color: Math.random() > 0.4 ? 'rgba(112, 22, 239, ' : 'rgba(255, 255, 255, '
+        });
+      }
+    }
+    
+    streaks.forEach(s => {
+      const speed = s.speed * (1 + warpP * 12);
+      const len = s.len * (1 + warpP * 5);
+      s.dist += speed;
+      
+      const x1 = Cx + Math.cos(s.angle) * s.dist;
+      const y1 = Cy + Math.sin(s.angle) * s.dist;
+      const x2 = Cx + Math.cos(s.angle) * (s.dist + len);
+      const y2 = Cy + Math.sin(s.angle) * (s.dist + len);
+      
+      const alpha = (0.4 * (1 - warpP)) * Math.min(1, s.dist / 80);
+      
+      if (alpha > 0) {
+        G.save();
+        G.strokeStyle = s.color + alpha + ')';
+        G.lineWidth = 1.2;
+        G.beginPath();
+        G.moveTo(x1, y1);
+        G.lineTo(x2, y2);
+        G.stroke();
+        G.restore();
+      }
+      
+      const maxDist = Math.max(W, H) * 0.75;
+      if (s.dist > maxDist) {
+        s.dist = Math.random() * LR * 0.2;
+        s.angle = Math.random() * Math.PI * 2;
+      }
+    });
+  }
+
+  function drawFullLogo(alpha) {
+    DOTS.forEach(d => {
+      drawDot(d.x, d.y, DR, alpha);
+    });
+    RAYS.forEach(r => drawRay(r, 1, alpha));
+  }
+
+  const TS={
+    dotStart: 150,
+    dotStagger: 120,
+    dotDur: 550,
+    
+    textStart: 450,
+    textStagger: 120,
+    textDur: 550,
+    
+    rayStart: 1300,
+    rayStagger: 110,
+    rayDur: 480,
+
+    textFadeStart: 2800,
+    textFadeDur: 450,
+
+    zoomStart: 3200,
+    zoomDur: 1200,
+
+    fadeStart: 3350,
+    fadeDur: 850
+  };
+
+  let raf, t0;
+  let transitionStarted = false;
+
+  function startTransition(){
+    const loader = document.getElementById('intro-loader');
+    loader.classList.add('reveal');
+
+    if (window.__triggerEntrance) window.__triggerEntrance();
+
+    setTimeout(() => loader.remove(), TS.fadeDur + 100);
+  }
+
+  function frame(now){
+    const t=now-t0;
+
+    G.clearRect(0,0,W,H);
+
+    drawAmbientParticles();
+
+    const inZoom = t >= TS.zoomStart;
+    const zp = inZoom ? pr(t, TS.zoomStart, TS.zoomDur) : 0;
+    
+    if (t >= TS.fadeStart && !transitionStarted) {
+      transitionStarted = true;
+      startTransition();
+    }
+
+    if (zp >= 1) {
+      return;
+    }
+
+    if (inZoom) {
+      const scale = 1 + Math.pow(zp, 4.5) * 110;
+      const logoAlpha = Math.max(0, 1 - Math.pow(zp, 2.5));
+      
+      drawWarpStreaks(zp);
+      
+      G.save();
+      G.translate(Cx, Cy);
+      G.scale(scale, scale);
+      G.translate(-Cx, -Cy);
+      drawFullLogo(logoAlpha);
+      G.restore();
+      
+    } else {
+      DOTS.forEach((d, i)=>{
+        const tStart = TS.dotStart + i * TS.dotStagger;
+        const dp = pr(t, tStart, TS.dotDur);
+        if (dp <= 0) return;
+        
+        const easeVal = easeBack(dp);
+        const startX = Cx + d.nx * LR * 1.8;
+        const startY = Cy + d.ny * LR * 1.8;
+        const curX = startX + (d.x - startX) * Math.min(1, easeVal);
+        const curY = startY + (d.y - startY) * Math.min(1, easeVal);
+        
+        G.save();
+        G.strokeStyle = 'rgba(112, 22, 239, ' + (0.15 * Math.max(0, 1 - dp * 1.5)) + ')';
+        G.lineWidth = 0.5;
+        G.beginPath();
+        G.moveTo(startX, startY);
+        G.lineTo(curX, curY);
+        G.stroke();
+        G.restore();
+
+        drawDot(curX, curY, DR * Math.min(1, dp * 2.0), Math.min(1, dp * 1.5));
+
+        const labelTStart = TS.textStart + i * TS.textStagger;
+        const lp = pr(t, labelTStart, TS.textDur);
+        if (lp > 0 && t < TS.textFadeStart + TS.textFadeDur) {
+          const ta = Math.min(easeOutCubic(lp), 1 - easeOutCubic(pr(t, TS.textFadeStart, TS.textFadeDur)));
+          const currentSpacing = FONT * 0.12 * (1 + (1 - ta) * 2.5);
+          drawLabel(d, ta, currentSpacing);
+        }
+      });
+
+      RAY_ORDER.forEach((ri, order)=>{
+        const rp = easeOutCubic(pr(t, TS.rayStart + order * TS.rayStagger, TS.rayDur));
+        if (rp <= 0) return;
+        drawRay(RAYS[ri], rp, 1);
+      });
+
+    }
+
+    raf=requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', () => {
+    if (transitionStarted) return;
+    W = window.innerWidth;
+    H = window.innerHeight;
+    cv.width = W * dpr;
+    cv.height = H * dpr;
+    G.scale(dpr, dpr);
+    Cx = W / 2;
+    Cy = H / 2;
+    LR = Math.min(W, H) * 0.34;
+    SW = LR * (18 / 170);
+    DR = LR * (9 / 170);
+    FONT = Math.round(LR * (16 / 170));
+    calcLayout();
+    calcRays();
+  });
+
+  t0=performance.now();
+  raf=requestAnimationFrame(frame);
+})();
+</script>
+
+<!-- HERO WRAPPER -->
+<div class="hero-wrapper">
+
+<!-- 3D BACKGROUND -->
+<div id="crt-frame"></div>
+
+<!-- MOUSE-FOLLOW PURPLE GLOW -->
+<div class="hero-mouse-glow" id="hero-mouse-glow"></div>
+
+<!-- BOTTOM FADE (between canvas and overlay) -->
+<div class="hero-fade"></div>
+
+<!-- TOP FADE (below navbar) -->
+<div class="hero-fade-top"></div>
+
+<!-- BATTLE OVERLAY (purple flash on mascot hits) -->
+<div id="battle-overlay"></div>
+
+<!-- HERO OVERLAY -->
+<div id="hero-overlay">
+
+  <!-- MAIN HERO -->
+  <div class="hero-content">
+    <h1 class="hero-h1">
+      <span class="hero-line"><span class="word" style="--i:0"><span class="word-inner">The</span></span> <span class="word" style="--i:1"><span class="word-inner">future</span></span> <span class="word" style="--i:2"><span class="word-inner">is</span></span> <span class="word" style="--i:3"><span class="word-inner">code.</span></span></span>
+      <span class="hero-line thin"><span class="word" style="--i:4"><span class="word-inner">We</span></span> <span class="word" style="--i:5"><span class="word-inner">help</span></span> <span class="word" style="--i:6"><span class="word-inner">build</span></span> <span class="word" style="--i:7"><span class="word-inner"><span id="rotate-word" class="rotate-text">it.</span></span></span></span>
+    </h1>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val number-val" data-count="15" data-suffix="+">0</div>
+        <div class="hero-stat-label">Projects Delivered</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val number-val" data-count="100" data-suffix="%">0</div>
+        <div class="hero-stat-label">Client Satisfaction</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val number-val" data-count="5" data-suffix="+">0</div>
+        <div class="hero-stat-label">Engineers &amp; Designers</div>
+      </div>
+    </div>
+    <div class="hero-row">
+      <p class="hero-sub">
+        We engineer high-performance mobile applications, modern web platforms, and custom enterprise software. From ideation to deployment, we build digital solutions that scale your startup and elevate your business.
+      </p>
+      <div class="hero-actions">
+        <div class="btn-row" id="brow">
+          <div class="btn-wrap" id="w1">
+            <canvas class="mstage" id="c1"></canvas>
+            <button class="btn-mascot btn-mascot-w" id="b1">Start Project &rarr;</button>
+          </div>
+          <div class="btn-wrap" id="w2">
+            <canvas class="mstage" id="c2"></canvas>
+            <button class="btn-mascot btn-mascot-b" id="b2">Our Portfolio</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCROLLING TECH STACK BANNER -->
+  <div class="hero-ticker-banner">
+    <div class="ticker-label-wrap">
+      <span class="ticker-label">Built with the best</span>
+    </div>
+    <div class="ticker-divider"></div>
+    <div class="ticker-scroll-container">
+      <div class="ticker-track">
+        <!-- Item 1: MOBILE APPS -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+            <line x1="12" y1="18" x2="12.01" y2="18"/>
+          </svg>
+          <span>MOBILE APPS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 2: FLUTTER (Logo) -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/flutter" class="ticker-icon brand-icon" alt="Flutter">
+          <span>FLUTTER</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 3: ANDROID DEVELOPMENT (Logo) -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/android" class="ticker-icon brand-icon-green" alt="Android Development">
+          <span>ANDROID DEVELOPMENT</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 4: WHITE-LABEL SAAS -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span>WHITE-LABEL SAAS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 5: FIREBASE (Logo) -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/firebase" class="ticker-icon brand-icon" alt="Firebase">
+          <span>FIREBASE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 6: Supabase (with Logo) -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/supabase" class="ticker-icon brand-icon" alt="Supabase">
+          <span>SUPABASE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 7: InsForge (with Logo) -->
+        <div class="ticker-item">
+          <svg viewBox="15 10 195 225" width="195" height="225" fill="none" class="ticker-icon brand-icon">
+            <path d="M26.1184 101.6C23.2939 98.7833 23.2939 94.2166 26.1184 91.4L97.7167 20L200 20L77.26 142.4C74.4355 145.217 69.8562 145.217 67.0317 142.4L26.1184 101.6Z" fill="#9B6DFF"/>
+            <path d="M155.251 77.375L200 122V224L104.109 128.375L155.251 77.375Z" fill="#C4A0FF"/>
+          </svg>
+          <span>INSFORGE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 8: WEB PLATFORMS -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <rect x="2" y="3" width="20" height="18" rx="2" ry="2"/>
+            <line x1="2" y1="8" x2="22" y2="8"/>
+            <line x1="6" y1="13" x2="6.01" y2="13"/>
+            <line x1="10" y1="13" x2="14" y2="13"/>
+          </svg>
+          <span>WEB PLATFORMS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 9: FULL-STACK SOLUTIONS -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>
+          </svg>
+          <span>FULL-STACK SOLUTIONS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 10: CUSTOM SOFTWARE -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <polyline points="4 17 10 11 4 5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+          <span>CUSTOM SOFTWARE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 11: UI/UX DESIGN -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+            <path d="M7.5 10.5c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5-1.5.672-1.5 1.5.672 1.5 1.5 1.5zM11.5 7.5c.828 0 1.5-.672 1.5-1.5S12.328 4.5 11.5 4.5s-1.5.672-1.5 1.5.672 1.5 1.5 1.5zM16.5 10.5c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5-1.5.672-1.5 1.5.672 1.5 1.5 1.5zM6 14h12c0 3.314-2.686 6-6 6s-6-2.686-6-6z"/>
+          </svg>
+          <span>UI/UX DESIGN</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 12: REACT NATIVE -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/react" class="ticker-icon brand-icon" alt="React Native">
+          <span>REACT NATIVE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 13: NODE.JS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/nodedotjs" class="ticker-icon brand-icon" alt="Node.js">
+          <span>NODE.JS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 14: NEXT.JS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/nextdotjs/fff" class="ticker-icon brand-icon" alt="Next.js">
+          <span>NEXT.JS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 15: TYPESCRIPT -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/typescript" class="ticker-icon brand-icon" alt="TypeScript">
+          <span>TYPESCRIPT</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 16: AWS -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 80 46" height="18" width="auto" class="ticker-icon brand-icon" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.747 18.17c0 .87.093 1.573.263 2.09.187.518.42.981.7 1.397.107.163.15.327.15.468 0 .187-.117.397-.35.607l-1.164.771c-.163.107-.327.163-.468.163-.187 0-.373-.093-.56-.257a5.737 5.737 0 01-.676-.887 14.547 14.547 0 01-.583-1.117c-1.467 1.724-3.307 2.59-5.52 2.59-1.573 0-2.847-.443-3.77-1.33-.933-.887-1.4-2.087-1.4-3.61 0-1.584.56-2.87 1.7-3.85 1.14-.98 2.637-1.467 4.52-1.467.63 0 1.28.047 1.957.14.677.093 1.377.233 2.1.397v-1.33c0-1.4-.293-2.377-.863-2.94-.583-.563-1.563-.84-2.963-.84-.63 0-1.28.07-1.957.233-.676.163-1.33.373-1.96.63-.28.117-.49.187-.607.21a1.03 1.03 0 01-.233.047c-.233 0-.35-.163-.35-.513v-.817c0-.28.047-.49.14-.607.093-.117.28-.233.56-.35a12.63 12.63 0 012.497-.7 12.3 12.3 0 012.543-.257c1.96 0 3.41.443 4.36 1.33.933.887 1.4 2.33 1.4 4.337v5.683h.023zM17.11 22.16c.607 0 1.237-.117 1.893-.35.653-.233 1.237-.653 1.727-1.237.28-.327.49-.7.59-1.12.1-.42.163-.933.163-1.54v-.747a15.6 15.6 0 00-1.703-.303 14.04 14.04 0 00-1.75-.093c-1.26 0-2.17.247-2.8.747-.63.5-.933 1.213-.933 2.147 0 .863.233 1.52.7 1.96.443.443 1.073.537 2.113.537zm15.04 2.03c-.327 0-.537-.047-.677-.163-.14-.093-.28-.327-.373-.677l-4.2-13.82c-.093-.35-.14-.583-.14-.7 0-.28.14-.42.42-.42h1.63c.35 0 .583.047.7.163.14.093.257.327.35.677l3.007 11.84 2.8-11.84c.07-.35.187-.583.327-.677.163-.117.397-.163.7-.163h1.33c.35 0 .583.047.7.163.14.093.257.327.35.677l2.847 11.98 3.1-11.98c.093-.35.233-.583.35-.677.14-.117.373-.163.7-.163h1.54c.28 0 .42.14.42.42 0 .07-.023.163-.047.28-.023.117-.07.257-.117.42l-4.29 13.82c-.093.35-.233.583-.373.677-.14.093-.373.163-.677.163h-1.44c-.35 0-.583-.047-.7-.163-.14-.117-.257-.35-.35-.7l-2.77-11.61-2.753 11.587c-.093.35-.187.583-.35.7-.14.117-.373.163-.7.163h-1.443zm22.81.467c-.887 0-1.773-.1-2.637-.303-.863-.2-1.54-.42-2.007-.677-.28-.163-.47-.327-.536-.49a1.226 1.226 0 01-.1-.49v-.84c0-.35.14-.513.397-.513.093 0 .187.023.28.047.093.023.233.093.373.163.513.233 1.073.42 1.657.537a9.04 9.04 0 001.773.163c.933 0 1.657-.163 2.17-.49.513-.327.77-.793.77-1.4 0-.42-.14-.77-.42-1.07-.28-.3-.793-.56-1.54-.793l-2.193-.677c-1.12-.35-1.96-.84-2.47-1.54a3.65 3.65 0 01-.793-2.24c0-.653.14-1.237.42-1.727.28-.49.653-.933 1.12-1.283.467-.373.98-.653 1.587-.84a6.545 6.545 0 011.89-.303c.327 0 .677.023 1.003.07.35.047.653.117.957.187.303.07.56.163.793.233.233.093.42.163.537.233.187.117.327.233.397.373.07.14.117.303.117.513v.77c0 .35-.14.537-.397.537-.14 0-.35-.07-.63-.187a7.397 7.397 0 00-3.17-.653c-.84 0-1.517.14-1.983.443-.467.303-.7.747-.7 1.377 0 .42.163.77.49 1.073.327.303.887.583 1.657.817l2.147.653c1.12.35 1.937.817 2.427 1.47.49.653.747 1.4.747 2.217 0 .677-.14 1.283-.42 1.82-.28.537-.677 1.027-1.167 1.4-.49.397-1.073.677-1.75.887a7.6 7.6 0 01-2.193.28z" fill="#232F3E"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M57.383 30.43c-5.9 4.36-14.47 6.68-21.84 6.68-10.34 0-19.647-3.82-26.68-10.153-.56-.49-.06-1.167.607-.77 7.59 4.41 16.96 7.07 26.633 7.07 6.52 0 13.7-1.353 20.31-4.153.98-.443 1.82.653.97 1.327z" fill="#FF9900"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M59.81 27.677c-.747-.957-4.97-.467-6.89-.233-.56.07-.653-.42-.14-.793 3.377-2.38 8.913-1.68 9.567-.887.653.793-.163 6.357-3.333 9.007-.49.42-.957.187-.747-.327.7-1.773 2.29-5.81 1.543-6.767z" fill="#FF9900"/>
+          </svg>
+          <span>AWS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 17: DOCKER -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/docker" class="ticker-icon brand-icon" alt="Docker">
+          <span>DOCKER</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 18: GRAPHQL -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/graphql" class="ticker-icon brand-icon" alt="GraphQL">
+          <span>GRAPHQL</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 19: POSTGRESQL -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/postgresql" class="ticker-icon brand-icon" alt="PostgreSQL">
+          <span>POSTGRESQL</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 20: STRIPE -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/stripe" class="ticker-icon brand-icon" alt="Stripe">
+          <span>STRIPE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 21: AI / ML -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A855F7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/>
+            <circle cx="7.5" cy="14.5" r="1.5" fill="#A855F7" stroke="none"/>
+            <circle cx="16.5" cy="14.5" r="1.5" fill="#A855F7" stroke="none"/>
+          </svg>
+          <span>AI / ML</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 22: IOS DEVELOPMENT -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/apple/fff" class="ticker-icon brand-icon" alt="iOS Development">
+          <span>iOS DEVELOPMENT</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 23: FIGMA -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" class="ticker-icon brand-icon" fill="none">
+            <path d="M8 24c2.208 0 4-1.792 4-4v-4H8c-2.208 0-4 1.792-4 4s1.792 4 4 4z" fill="#0ACF83"/>
+            <path d="M4 12c0-2.208 1.792-4 4-4h4v8H8c-2.208 0-4-1.792-4-4z" fill="#A259FF"/>
+            <path d="M4 4c0-2.208 1.792-4 4-4h4v8H8C5.792 8 4 6.208 4 4z" fill="#F24E1E"/>
+            <path d="M12 0h4c2.208 0 4 1.792 4 4s-1.792 4-4 4h-4V0z" fill="#FF7262"/>
+            <path d="M20 12c0 2.208-1.792 4-4 4s-4-1.792-4-4 1.792-4 4-4 4 1.792 4 4z" fill="#1ABCFE"/>
+          </svg>
+          <span>FIGMA</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 24: KOTLIN -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/kotlin" class="ticker-icon brand-icon" alt="Kotlin">
+          <span>KOTLIN</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 25: SWIFT -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/swift" class="ticker-icon brand-icon" alt="Swift">
+          <span>SWIFT</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 26: DART -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/dart" class="ticker-icon brand-icon" alt="Dart">
+          <span>DART</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 27: JAVA -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/openjdk/E76F00" class="ticker-icon brand-icon" alt="Java">
+          <span>JAVA</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 28: VERCEL -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/vercel/fff" class="ticker-icon brand-icon" alt="Vercel">
+          <span>VERCEL</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 29: REDIS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/redis" class="ticker-icon brand-icon" alt="Redis">
+          <span>REDIS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 30: MONGODB -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/mongodb" class="ticker-icon brand-icon" alt="MongoDB">
+          <span>MONGODB</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 31: TAILWIND CSS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/tailwindcss" class="ticker-icon brand-icon" alt="Tailwind CSS">
+          <span>TAILWIND CSS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 32: KUBERNETES -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/kubernetes" class="ticker-icon brand-icon" alt="Kubernetes">
+          <span>KUBERNETES</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 33: GITHUB -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/github/fff" class="ticker-icon brand-icon" alt="GitHub">
+          <span>GITHUB</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 34: PRISMA -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/prisma/fff" class="ticker-icon brand-icon" alt="Prisma">
+          <span>PRISMA</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 35: PYTHON -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/python" class="ticker-icon brand-icon" alt="Python">
+          <span>PYTHON</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 36: EXPO -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/expo/fff" class="ticker-icon brand-icon" alt="Expo">
+          <span>EXPO</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 37: GOOGLE CLOUD -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/googlecloud" class="ticker-icon brand-icon" alt="Google Cloud">
+          <span>GOOGLE CLOUD</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 38: VUE.JS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/vuedotjs" class="ticker-icon brand-icon" alt="Vue.js">
+          <span>VUE.JS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 39: ANGULAR -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/angular" class="ticker-icon brand-icon" alt="Angular">
+          <span>ANGULAR</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 40: SVELTE -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/svelte" class="ticker-icon brand-icon" alt="Svelte">
+          <span>SVELTE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 41: MYSQL -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/mysql" class="ticker-icon brand-icon" alt="MySQL">
+          <span>MYSQL</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 42: NESTJS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/nestjs" class="ticker-icon brand-icon" alt="NestJS">
+          <span>NESTJS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 43: FASTAPI -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/fastapi" class="ticker-icon brand-icon" alt="FastAPI">
+          <span>FASTAPI</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 44: DJANGO -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/django" class="ticker-icon brand-icon" alt="Django">
+          <span>DJANGO</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 45: DIGITALOCEAN -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/digitalocean" class="ticker-icon brand-icon" alt="DigitalOcean">
+          <span>DIGITALOCEAN</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 46: CLOUDFLARE -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/cloudflare" class="ticker-icon brand-icon" alt="Cloudflare">
+          <span>CLOUDFLARE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 47: TERRAFORM -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/terraform" class="ticker-icon brand-icon" alt="Terraform">
+          <span>TERRAFORM</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 48: TENSORFLOW -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/tensorflow" class="ticker-icon brand-icon" alt="TensorFlow">
+          <span>TENSORFLOW</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 49: PYTORCH -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/pytorch" class="ticker-icon brand-icon" alt="PyTorch">
+          <span>PYTORCH</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 50: PAYPAL -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/paypal" class="ticker-icon brand-icon" alt="PayPal">
+          <span>PAYPAL</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 51: RAZORPAY -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/razorpay" class="ticker-icon brand-icon" alt="Razorpay">
+          <span>RAZORPAY</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- ==================== DUPLICATE TRACK FOR SEAMLESS LOOP ==================== -->
+        <!-- Item 1: MOBILE APPS -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+            <line x1="12" y1="18" x2="12.01" y2="18"/>
+          </svg>
+          <span>MOBILE APPS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 2: FLUTTER (Logo) -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/flutter" class="ticker-icon brand-icon" alt="Flutter">
+          <span>FLUTTER</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 3: ANDROID DEVELOPMENT (Logo) -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/android" class="ticker-icon brand-icon-green" alt="Android Development">
+          <span>ANDROID DEVELOPMENT</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 4: WHITE-LABEL SAAS -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span>WHITE-LABEL SAAS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 5: FIREBASE (Logo) -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/firebase" class="ticker-icon brand-icon" alt="Firebase">
+          <span>FIREBASE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 6: Supabase (with Logo) -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/supabase" class="ticker-icon brand-icon" alt="Supabase">
+          <span>SUPABASE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 7: InsForge (with Logo) -->
+        <div class="ticker-item">
+          <svg viewBox="15 10 195 225" width="195" height="225" fill="none" class="ticker-icon brand-icon">
+            <path d="M26.1184 101.6C23.2939 98.7833 23.2939 94.2166 26.1184 91.4L97.7167 20L200 20L77.26 142.4C74.4355 145.217 69.8562 145.217 67.0317 142.4L26.1184 101.6Z" fill="#9B6DFF"/>
+            <path d="M155.251 77.375L200 122V224L104.109 128.375L155.251 77.375Z" fill="#C4A0FF"/>
+          </svg>
+          <span>INSFORGE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 8: WEB PLATFORMS -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <rect x="2" y="3" width="20" height="18" rx="2" ry="2"/>
+            <line x1="2" y1="8" x2="22" y2="8"/>
+            <line x1="6" y1="13" x2="6.01" y2="13"/>
+            <line x1="10" y1="13" x2="14" y2="13"/>
+          </svg>
+          <span>WEB PLATFORMS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 9: FULL-STACK SOLUTIONS -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>
+          </svg>
+          <span>FULL-STACK SOLUTIONS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 10: CUSTOM SOFTWARE -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <polyline points="4 17 10 11 4 5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+          <span>CUSTOM SOFTWARE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 11: UI/UX DESIGN -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+            <path d="M7.5 10.5c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5-1.5.672-1.5 1.5.672 1.5 1.5 1.5zM11.5 7.5c.828 0 1.5-.672 1.5-1.5S12.328 4.5 11.5 4.5s-1.5.672-1.5 1.5.672 1.5 1.5 1.5zM16.5 10.5c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5-1.5.672-1.5 1.5.672 1.5 1.5 1.5zM6 14h12c0 3.314-2.686 6-6 6s-6-2.686-6-6z"/>
+          </svg>
+          <span>UI/UX DESIGN</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 12: REACT NATIVE -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/react" class="ticker-icon brand-icon" alt="React Native">
+          <span>REACT NATIVE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 13: NODE.JS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/nodedotjs" class="ticker-icon brand-icon" alt="Node.js">
+          <span>NODE.JS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 14: NEXT.JS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/nextdotjs/fff" class="ticker-icon brand-icon" alt="Next.js">
+          <span>NEXT.JS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 15: TYPESCRIPT -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/typescript" class="ticker-icon brand-icon" alt="TypeScript">
+          <span>TYPESCRIPT</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 16: AWS -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 80 46" height="18" width="auto" class="ticker-icon brand-icon" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.747 18.17c0 .87.093 1.573.263 2.09.187.518.42.981.7 1.397.107.163.15.327.15.468 0 .187-.117.397-.35.607l-1.164.771c-.163.107-.327.163-.468.163-.187 0-.373-.093-.56-.257a5.737 5.737 0 01-.676-.887 14.547 14.547 0 01-.583-1.117c-1.467 1.724-3.307 2.59-5.52 2.59-1.573 0-2.847-.443-3.77-1.33-.933-.887-1.4-2.087-1.4-3.61 0-1.584.56-2.87 1.7-3.85 1.14-.98 2.637-1.467 4.52-1.467.63 0 1.28.047 1.957.14.677.093 1.377.233 2.1.397v-1.33c0-1.4-.293-2.377-.863-2.94-.583-.563-1.563-.84-2.963-.84-.63 0-1.28.07-1.957.233-.676.163-1.33.373-1.96.63-.28.117-.49.187-.607.21a1.03 1.03 0 01-.233.047c-.233 0-.35-.163-.35-.513v-.817c0-.28.047-.49.14-.607.093-.117.28-.233.56-.35a12.63 12.63 0 012.497-.7 12.3 12.3 0 012.543-.257c1.96 0 3.41.443 4.36 1.33.933.887 1.4 2.33 1.4 4.337v5.683h.023zM17.11 22.16c.607 0 1.237-.117 1.893-.35.653-.233 1.237-.653 1.727-1.237.28-.327.49-.7.59-1.12.1-.42.163-.933.163-1.54v-.747a15.6 15.6 0 00-1.703-.303 14.04 14.04 0 00-1.75-.093c-1.26 0-2.17.247-2.8.747-.63.5-.933 1.213-.933 2.147 0 .863.233 1.52.7 1.96.443.443 1.073.537 2.113.537zm15.04 2.03c-.327 0-.537-.047-.677-.163-.14-.093-.28-.327-.373-.677l-4.2-13.82c-.093-.35-.14-.583-.14-.7 0-.28.14-.42.42-.42h1.63c.35 0 .583.047.7.163.14.093.257.327.35.677l3.007 11.84 2.8-11.84c.07-.35.187-.583.327-.677.163-.117.397-.163.7-.163h1.33c.35 0 .583.047.7.163.14.093.257.327.35.677l2.847 11.98 3.1-11.98c.093-.35.233-.583.35-.677.14-.117.373-.163.7-.163h1.54c.28 0 .42.14.42.42 0 .07-.023.163-.047.28-.023.117-.07.257-.117.42l-4.29 13.82c-.093.35-.233.583-.373.677-.14.093-.373.163-.677.163h-1.44c-.35 0-.583-.047-.7-.163-.14-.117-.257-.35-.35-.7l-2.77-11.61-2.753 11.587c-.093.35-.187.583-.35.7-.14.117-.373.163-.7.163h-1.443zm22.81.467c-.887 0-1.773-.1-2.637-.303-.863-.2-1.54-.42-2.007-.677-.28-.163-.47-.327-.536-.49a1.226 1.226 0 01-.1-.49v-.84c0-.35.14-.513.397-.513.093 0 .187.023.28.047.093.023.233.093.373.163.513.233 1.073.42 1.657.537a9.04 9.04 0 001.773.163c.933 0 1.657-.163 2.17-.49.513-.327.77-.793.77-1.4 0-.42-.14-.77-.42-1.07-.28-.3-.793-.56-1.54-.793l-2.193-.677c-1.12-.35-1.96-.84-2.47-1.54a3.65 3.65 0 01-.793-2.24c0-.653.14-1.237.42-1.727.28-.49.653-.933 1.12-1.283.467-.373.98-.653 1.587-.84a6.545 6.545 0 011.89-.303c.327 0 .677.023 1.003.07.35.047.653.117.957.187.303.07.56.163.793.233.233.093.42.163.537.233.187.117.327.233.397.373.07.14.117.303.117.513v.77c0 .35-.14.537-.397.537-.14 0-.35-.07-.63-.187a7.397 7.397 0 00-3.17-.653c-.84 0-1.517.14-1.983.443-.467.303-.7.747-.7 1.377 0 .42.163.77.49 1.073.327.303.887.583 1.657.817l2.147.653c1.12.35 1.937.817 2.427 1.47.49.653.747 1.4.747 2.217 0 .677-.14 1.283-.42 1.82-.28.537-.677 1.027-1.167 1.4-.49.397-1.073.677-1.75.887a7.6 7.6 0 01-2.193.28z" fill="#232F3E"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M57.383 30.43c-5.9 4.36-14.47 6.68-21.84 6.68-10.34 0-19.647-3.82-26.68-10.153-.56-.49-.06-1.167.607-.77 7.59 4.41 16.96 7.07 26.633 7.07 6.52 0 13.7-1.353 20.31-4.153.98-.443 1.82.653.97 1.327z" fill="#FF9900"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M59.81 27.677c-.747-.957-4.97-.467-6.89-.233-.56.07-.653-.42-.14-.793 3.377-2.38 8.913-1.68 9.567-.887.653.793-.163 6.357-3.333 9.007-.49.42-.957.187-.747-.327.7-1.773 2.29-5.81 1.543-6.767z" fill="#FF9900"/>
+          </svg>
+          <span>AWS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+
+        <!-- Item 17: DOCKER -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/docker" class="ticker-icon brand-icon" alt="Docker">
+          <span>DOCKER</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 18: GRAPHQL -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/graphql" class="ticker-icon brand-icon" alt="GraphQL">
+          <span>GRAPHQL</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 19: POSTGRESQL -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/postgresql" class="ticker-icon brand-icon" alt="PostgreSQL">
+          <span>POSTGRESQL</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 20: STRIPE -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/stripe" class="ticker-icon brand-icon" alt="Stripe">
+          <span>STRIPE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 21: AI / ML -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A855F7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ticker-icon">
+            <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/>
+            <circle cx="7.5" cy="14.5" r="1.5" fill="#A855F7" stroke="none"/>
+            <circle cx="16.5" cy="14.5" r="1.5" fill="#A855F7" stroke="none"/>
+          </svg>
+          <span>AI / ML</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 22: IOS DEVELOPMENT -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/apple/fff" class="ticker-icon brand-icon" alt="iOS Development">
+          <span>iOS DEVELOPMENT</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 23: FIGMA -->
+        <div class="ticker-item">
+          <svg viewBox="0 0 24 24" width="24" height="24" class="ticker-icon brand-icon" fill="none">
+            <path d="M8 24c2.208 0 4-1.792 4-4v-4H8c-2.208 0-4 1.792-4 4s1.792 4 4 4z" fill="#0ACF83"/>
+            <path d="M4 12c0-2.208 1.792-4 4-4h4v8H8c-2.208 0-4-1.792-4-4z" fill="#A259FF"/>
+            <path d="M4 4c0-2.208 1.792-4 4-4h4v8H8C5.792 8 4 6.208 4 4z" fill="#F24E1E"/>
+            <path d="M12 0h4c2.208 0 4 1.792 4 4s-1.792 4-4 4h-4V0z" fill="#FF7262"/>
+            <path d="M20 12c0 2.208-1.792 4-4 4s-4-1.792-4-4 1.792-4 4-4 4 1.792 4 4z" fill="#1ABCFE"/>
+          </svg>
+          <span>FIGMA</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 24: KOTLIN -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/kotlin" class="ticker-icon brand-icon" alt="Kotlin">
+          <span>KOTLIN</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 25: SWIFT -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/swift" class="ticker-icon brand-icon" alt="Swift">
+          <span>SWIFT</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 26: DART -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/dart" class="ticker-icon brand-icon" alt="Dart">
+          <span>DART</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 27: JAVA -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/openjdk/E76F00" class="ticker-icon brand-icon" alt="Java">
+          <span>JAVA</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 28: VERCEL -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/vercel/fff" class="ticker-icon brand-icon" alt="Vercel">
+          <span>VERCEL</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 29: REDIS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/redis" class="ticker-icon brand-icon" alt="Redis">
+          <span>REDIS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 30: MONGODB -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/mongodb" class="ticker-icon brand-icon" alt="MongoDB">
+          <span>MONGODB</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 31: TAILWIND CSS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/tailwindcss" class="ticker-icon brand-icon" alt="Tailwind CSS">
+          <span>TAILWIND CSS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 32: KUBERNETES -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/kubernetes" class="ticker-icon brand-icon" alt="Kubernetes">
+          <span>KUBERNETES</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 33: GITHUB -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/github/fff" class="ticker-icon brand-icon" alt="GitHub">
+          <span>GITHUB</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 34: PRISMA -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/prisma/fff" class="ticker-icon brand-icon" alt="Prisma">
+          <span>PRISMA</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 35: PYTHON -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/python" class="ticker-icon brand-icon" alt="Python">
+          <span>PYTHON</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 36: EXPO -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/expo/fff" class="ticker-icon brand-icon" alt="Expo">
+          <span>EXPO</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 37: GOOGLE CLOUD -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/googlecloud" class="ticker-icon brand-icon" alt="Google Cloud">
+          <span>GOOGLE CLOUD</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 38: VUE.JS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/vuedotjs" class="ticker-icon brand-icon" alt="Vue.js">
+          <span>VUE.JS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 39: ANGULAR -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/angular" class="ticker-icon brand-icon" alt="Angular">
+          <span>ANGULAR</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 40: SVELTE -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/svelte" class="ticker-icon brand-icon" alt="Svelte">
+          <span>SVELTE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 41: MYSQL -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/mysql" class="ticker-icon brand-icon" alt="MySQL">
+          <span>MYSQL</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 42: NESTJS -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/nestjs" class="ticker-icon brand-icon" alt="NestJS">
+          <span>NESTJS</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 43: FASTAPI -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/fastapi" class="ticker-icon brand-icon" alt="FastAPI">
+          <span>FASTAPI</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 44: DJANGO -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/django" class="ticker-icon brand-icon" alt="Django">
+          <span>DJANGO</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 45: DIGITALOCEAN -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/digitalocean" class="ticker-icon brand-icon" alt="DigitalOcean">
+          <span>DIGITALOCEAN</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 46: CLOUDFLARE -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/cloudflare" class="ticker-icon brand-icon" alt="Cloudflare">
+          <span>CLOUDFLARE</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 47: TERRAFORM -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/terraform" class="ticker-icon brand-icon" alt="Terraform">
+          <span>TERRAFORM</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 48: TENSORFLOW -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/tensorflow" class="ticker-icon brand-icon" alt="TensorFlow">
+          <span>TENSORFLOW</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 49: PYTORCH -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/pytorch" class="ticker-icon brand-icon" alt="PyTorch">
+          <span>PYTORCH</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 50: PAYPAL -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/paypal" class="ticker-icon brand-icon" alt="PayPal">
+          <span>PAYPAL</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+
+        <!-- Item 51: RAZORPAY -->
+        <div class="ticker-item">
+          <img src="https://cdn.simpleicons.org/razorpay" class="ticker-icon brand-icon" alt="Razorpay">
+          <span>RAZORPAY</span>
+        </div>
+        <div class="ticker-bullet">&bull;</div>
+      </div>
+    </div>
+  </div>
+
+
+</div>
+</div><!-- end hero-wrapper -->
+
+<!-- ===== DOT GRID SHOWCASE ===== -->
+<section class="section section-dotgrid">
+  <canvas id="dotgrid-canvas" class="dotgrid-canvas"></canvas>
+  <div class="section-inner">
+    <div class="section-label reveal">What We Offer</div>
+    <h2 class="section-heading reveal reveal-delay-1">Solutions for every <span class="thin">stage of growth</span></h2>
+    <div class="dotgrid-cards">
+      <div class="dotgrid-card reveal reveal-delay-1">
+        <div class="dotgrid-badge">Free Discovery Call</div>
+        <h3>For Startups</h3>
+        <p class="dotgrid-sub">Launch your MVP in weeks, not months</p>
+        <button class="btn-primary">Start a Project</button>
+      </div>
+      <div class="dotgrid-card reveal reveal-delay-2">
+        <div class="dotgrid-badge">Dedicated Team</div>
+        <h3>For Enterprises</h3>
+        <p class="dotgrid-sub">Scale your platform with confidence</p>
+        <button class="btn-secondary">Talk to Sales</button>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+(() => {
+  const section = document.querySelector('.section-dotgrid');
+  const canvas = document.getElementById('dotgrid-canvas');
+  if (!section || !canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const GAP = 28;
+  const DOT_R = 1.4;
+  const RADIUS = 130;
+  const BRACKET_GAP = 16;
+  const TARGET_CAPTURE = 26;
+  const PIXEL_STEP = 4;
+  const FORM_STAGGER = 4;
+  const FORM_DURATION = 260;
+
+  let dots = [];
+  let framedDots = [];
+  let width = 0, height = 0;
+  let running = false;
+  let rafId = null;
+  let startTime = performance.now();
+  const mouse = { x: -9999, y: -9999, active: false };
+  const cards = section.querySelectorAll('.dotgrid-card');
+
+  function resize() {
+    const rect = section.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    dots = [];
+    const cols = Math.ceil(width / GAP) + 1;
+    const rows = Math.ceil(height / GAP) + 1;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const bx = c * GAP;
+        const by = r * GAP;
+        dots.push({ bx, by, x: bx, y: by, seed: Math.random() * Math.PI * 2 });
+      }
+    }
+  }
+
+  function onMove(e) {
+    const rect = section.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+    mouse.active = true;
+  }
+  function onLeave() {
+    mouse.active = false;
+    mouse.x = -9999;
+    mouse.y = -9999;
+  }
+
+  function buildGlyphTargets(glyph, centerX, centerY, fontSize) {
+    const w = Math.ceil(fontSize * 0.9);
+    const h = Math.ceil(fontSize * 1.2);
+    const off = document.createElement('canvas');
+    off.width = w;
+    off.height = h;
+    const octx = off.getContext('2d');
+    octx.fillStyle = '#fff';
+    octx.font = `700 ${fontSize}px ui-monospace, "SF Mono", Menlo, Consolas, monospace`;
+    octx.textAlign = 'center';
+    octx.textBaseline = 'middle';
+    octx.fillText(glyph, w / 2, h / 2);
+    const { data } = octx.getImageData(0, 0, w, h);
+    const points = [];
+    for (let y = 0; y < h; y += PIXEL_STEP) {
+      for (let x = 0; x < w; x += PIXEL_STEP) {
+        if (data[(y * w + x) * 4 + 3] > 100) {
+          points.push({ x: centerX - w / 2 + x, y: centerY - h / 2 + y });
+        }
+      }
+    }
+    return points;
+  }
+
+  function assignFrameTargets(card) {
+    const cr = card.getBoundingClientRect();
+    const sr = section.getBoundingClientRect();
+    const cardLeft = cr.left - sr.left;
+    const cardRight = cr.right - sr.left;
+    const cardTop = cr.top - sr.top;
+    const cardBottom = cr.bottom - sr.top;
+    const centerY = (cardTop + cardBottom) / 2;
+    const fontSize = cr.height * 0.45;
+    const glyphSpan = fontSize * 0.4;
+
+    const targets = buildGlyphTargets('{', cardLeft - BRACKET_GAP - glyphSpan, centerY, fontSize)
+      .concat(buildGlyphTargets('}', cardRight + BRACKET_GAP + glyphSpan, centerY, fontSize));
+    if (!targets.length) return;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of targets) {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    }
+    minX -= TARGET_CAPTURE; minY -= TARGET_CAPTURE; maxX += TARGET_CAPTURE; maxY += TARGET_CAPTURE;
+
+    const assigned = [];
+    for (const d of dots) {
+      if (d.bx < minX || d.bx > maxX || d.by < minY || d.by > maxY) continue;
+      let best = null, bestDist = Infinity;
+      for (const p of targets) {
+        const dist = Math.hypot(d.bx - p.x, d.by - p.y);
+        if (dist < bestDist) { bestDist = dist; best = p; }
+      }
+      if (best && bestDist < TARGET_CAPTURE) {
+        d.frameTarget = best;
+        framedDots.push(d);
+        assigned.push(d);
+      }
+    }
+
+    assigned.sort((a, b) => a.frameTarget.y - b.frameTarget.y || a.frameTarget.x - b.frameTarget.x);
+    const now = performance.now();
+    assigned.forEach((d, i) => {
+      d.formStart = now;
+      d.formDelay = i * FORM_STAGGER;
+    });
+  }
+
+  function clearFrameTargets() {
+    for (const d of framedDots) {
+      d.frameTarget = null;
+      d.formStart = 0;
+      d.formDelay = 0;
+    }
+    framedDots = [];
+  }
+
+  cards.forEach((card) => {
+    card.addEventListener('mouseenter', () => {
+      clearFrameTargets();
+      assignFrameTargets(card);
+    });
+    card.addEventListener('mouseleave', clearFrameTargets);
+  });
+
+  function frame() {
+    if (!running) return;
+    const t = (performance.now() - startTime) / 1000;
+    ctx.clearRect(0, 0, width, height);
+    for (let i = 0; i < dots.length; i++) {
+      const d = dots[i];
+      let tx = d.bx + Math.sin(t * 0.6 + d.seed) * 2;
+      let ty = d.by + Math.cos(t * 0.5 + d.seed) * 2;
+      let r = DOT_R, color = 'rgba(255,255,255,0.12)';
+      let framed = false;
+
+      if (d.frameTarget) {
+        const elapsed = performance.now() - d.formStart - d.formDelay;
+        const p = Math.max(0, Math.min(1, elapsed / FORM_DURATION));
+        const eased = p * p * (3 - 2 * p);
+        if (eased > 0) {
+          tx = d.bx + (d.frameTarget.x - d.bx) * eased;
+          ty = d.by + (d.frameTarget.y - d.by) * eased;
+          r = DOT_R + 1.6 * eased;
+          color = `rgba(167,139,250,${(0.85 * eased).toFixed(3)})`;
+          framed = true;
+        }
+      }
+
+      if (!framed && mouse.active) {
+        const dx = d.bx - mouse.x;
+        const dy = d.by - mouse.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < RADIUS) {
+          const angle = Math.atan2(dy, dx);
+          tx = mouse.x + Math.cos(angle) * RADIUS;
+          ty = mouse.y + Math.sin(angle) * RADIUS;
+          const t2 = 1 - dist / RADIUS;
+          r = DOT_R + t2 * 1.8;
+          color = `rgba(167,139,250,${(0.25 + t2 * 0.65).toFixed(3)})`;
+        }
+      }
+
+      d.x += (tx - d.x) * 0.12;
+      d.y += (ty - d.y) * 0.12;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function start() {
+    if (running) return;
+    running = true;
+    frame();
+  }
+  function stop() {
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+  section.addEventListener('mousemove', onMove);
+  section.addEventListener('mouseleave', onLeave);
+
+  new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) start();
+      else stop();
+    });
+  }, { threshold: 0.1 }).observe(section);
+})();
+</script>
+
+<!-- ===== LIVE PRODUCTS ===== -->
+<section class="section section-analytics">
+  <div class="section-inner">
+    <div class="floaticons-stage reveal reveal-delay-1">
+      <div id="floaticons-root" class="floaticons-bg"></div>
+      <div class="floaticons-content">
+        <div class="section-label reveal reveal-delay-1">What We Build</div>
+        <h2 class="section-heading reveal reveal-delay-2">
+          One team, every skill <span class="thin">your product needs</span>
+        </h2>
+        <p class="products-sub reveal reveal-delay-3">From web platforms to mobile apps, AI features to cloud infrastructure — we design, build, and ship it all in-house, end to end.</p>
+        <a href="#" class="btn-primary reveal reveal-delay-4">Start a Project <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== WHAT WE DO ===== -->
+<section class="section section-whatwedo">
+  <div class="section-inner">
+    <div class="section-label reveal">What We Do</div>
+    <h2 class="section-heading reveal reveal-delay-1">
+      We build custom digital products <span class="thin">that scale</span>
+    </h2>
+    <div class="whatwedo-pin">
+    <div class="whatwedo-layout reveal reveal-delay-2">
+      <div class="whatwedo-list">
+        <div class="whatwedo-indicator"></div>
+        <div class="whatwedo-item active">
+          <span class="whatwedo-num">01</span>
+          <span class="whatwedo-name">Web Development</span>
+          <div class="whatwedo-item-detail">
+            <div class="whatwedo-bg-icon"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor"><rect x="10" y="15" width="80" height="62" rx="5"/><line x1="10" y1="32" x2="90" y2="32"/><circle cx="20" cy="23.5" r="1.8" fill="currentColor" stroke="none"/><circle cx="29" cy="23.5" r="1.8" fill="currentColor" stroke="none"/><circle cx="38" cy="23.5" r="1.8" fill="currentColor" stroke="none"/><path d="M32 46 L23 55 L32 64"/><path d="M68 46 L77 55 L68 64"/><line x1="50" y1="44" x2="44" y2="66"/></svg></div>
+            <div class="whatwedo-tag">01 — Web Development</div>
+            <h3 class="whatwedo-detail-heading">Responsive.<br>Scalable.<br>Built to last.</h3>
+            <p class="whatwedo-detail-desc">Highly responsive, secure modern web applications tailored to your business needs — built with state-of-the-art architectures and frameworks that handle real traffic from day one.</p>
+            <div class="whatwedo-tags"><span>React</span><span>Next.js</span><span>Node.js</span><span>PostgreSQL</span><span>GraphQL</span></div>
+          </div>
+        </div>
+        <div class="whatwedo-item">
+          <span class="whatwedo-num">02</span>
+          <span class="whatwedo-name">Mobile Applications</span>
+          <div class="whatwedo-item-detail">
+            <div class="whatwedo-bg-icon"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor"><rect x="25" y="5" width="50" height="90" rx="9"/><line x1="42" y1="15" x2="58" y2="15"/><rect x="35" y="30" width="13" height="13" rx="3"/><rect x="52" y="30" width="13" height="13" rx="3"/><rect x="35" y="47" width="13" height="13" rx="3"/><rect x="52" y="47" width="13" height="13" rx="3"/><line x1="42" y1="86" x2="58" y2="86"/></svg></div>
+            <div class="whatwedo-tag">02 — Mobile Applications</div>
+            <h3 class="whatwedo-detail-heading">Native.<br>Fluid.<br>Cross-platform.</h3>
+            <p class="whatwedo-detail-desc">Native and cross-platform mobile apps for iOS and Android, engineered for seamless performance and intuitive experiences your users will love.</p>
+            <div class="whatwedo-tags"><span>Swift</span><span>Kotlin</span><span>React Native</span><span>Firebase</span><span>GraphQL</span></div>
+          </div>
+        </div>
+        <div class="whatwedo-item">
+          <span class="whatwedo-num">03</span>
+          <span class="whatwedo-name">AI Integration</span>
+          <div class="whatwedo-item-detail">
+            <div class="whatwedo-bg-icon"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor"><line x1="50" y1="50" x2="50" y2="18"/><line x1="50" y1="50" x2="20" y2="50"/><line x1="50" y1="50" x2="80" y2="50"/><line x1="50" y1="50" x2="33" y2="80"/><line x1="50" y1="50" x2="67" y2="80"/><circle cx="50" cy="50" r="9" fill="currentColor" stroke="none"/><circle cx="50" cy="18" r="6"/><circle cx="20" cy="50" r="6"/><circle cx="80" cy="50" r="6"/><circle cx="33" cy="80" r="6"/><circle cx="67" cy="80" r="6"/></svg></div>
+            <div class="whatwedo-tag">03 — AI Integration</div>
+            <h3 class="whatwedo-detail-heading">Smart.<br>Adaptive.<br>Automated.</h3>
+            <p class="whatwedo-detail-desc">Cutting-edge LLMs, predictive models, and intelligent automation woven into your existing products to supercharge workflows and decision-making.</p>
+            <div class="whatwedo-tags"><span>OpenAI</span><span>LangChain</span><span>Python</span><span>Vector DB</span><span>FastAPI</span></div>
+          </div>
+        </div>
+        <div class="whatwedo-item">
+          <span class="whatwedo-num">04</span>
+          <span class="whatwedo-name">Cloud Infrastructure</span>
+          <div class="whatwedo-item-detail">
+            <div class="whatwedo-bg-icon"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor"><path d="M28 58a16 16 0 0 1 1-32 22 22 0 0 1 42-5 17 17 0 0 1 -2 37z"/><line x1="38" y1="68" x2="38" y2="85"/><line x1="50" y1="68" x2="50" y2="90"/><line x1="62" y1="68" x2="62" y2="85"/><circle cx="38" cy="90" r="4.5"/><circle cx="50" cy="95" r="4.5"/><circle cx="62" cy="90" r="4.5"/></svg></div>
+            <div class="whatwedo-tag">04 — Cloud Infrastructure</div>
+            <h3 class="whatwedo-detail-heading">Resilient.<br>Elastic.<br>Always on.</h3>
+            <p class="whatwedo-detail-desc">Auto-scaling cloud architectures with high availability, modern encryption, and zero-downtime continuous integration — built to handle growth.</p>
+            <div class="whatwedo-tags"><span>AWS</span><span>Docker</span><span>Kubernetes</span><span>Terraform</span><span>CI/CD</span></div>
+          </div>
+        </div>
+        <div class="whatwedo-item">
+          <span class="whatwedo-num">05</span>
+          <span class="whatwedo-name">SaaS Platforms</span>
+          <div class="whatwedo-item-detail">
+            <div class="whatwedo-bg-icon"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor"><rect x="8" y="8" width="84" height="84" rx="6"/><line x1="8" y1="28" x2="92" y2="28"/><circle cx="19" cy="18" r="2" fill="currentColor" stroke="none"/><circle cx="28" cy="18" r="2" fill="currentColor" stroke="none"/><rect x="20" y="55" width="11" height="22"/><rect x="39" y="44" width="11" height="33"/><rect x="58" y="36" width="11" height="41"/><rect x="77" y="50" width="11" height="27"/></svg></div>
+            <div class="whatwedo-tag">05 — SaaS Platforms</div>
+            <h3 class="whatwedo-detail-heading">Multi-tenant.<br>Secure.<br>Production-ready.</h3>
+            <p class="whatwedo-detail-desc">Scalable multi-tenant SaaS applications with subscription billing, secure APIs, and custom analytics dashboards built in from day one.</p>
+            <div class="whatwedo-tags"><span>Stripe</span><span>PostgreSQL</span><span>Redis</span><span>Node.js</span><span>REST APIs</span></div>
+          </div>
+        </div>
+        <div class="whatwedo-item">
+          <span class="whatwedo-num">06</span>
+          <span class="whatwedo-name">UI/UX Design</span>
+          <div class="whatwedo-item-detail">
+            <div class="whatwedo-bg-icon"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor"><path d="M15 78 C 28 22, 72 22, 85 78"/><line x1="15" y1="78" x2="32" y2="28"/><line x1="85" y1="78" x2="68" y2="28"/><circle cx="15" cy="78" r="4.5" fill="currentColor" stroke="none"/><circle cx="85" cy="78" r="4.5" fill="currentColor" stroke="none"/><circle cx="50" cy="20" r="5.5"/></svg></div>
+            <div class="whatwedo-tag">06 — UI/UX Design</div>
+            <h3 class="whatwedo-detail-heading">Clean.<br>Intuitive.<br>On-brand.</h3>
+            <p class="whatwedo-detail-desc">Premium, human-centered interfaces that establish your brand identity, delight users, and convert visitors into customers.</p>
+            <div class="whatwedo-tags"><span>Figma</span><span>Design Systems</span><span>Prototyping</span><span>User Research</span><span>Motion</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="whatwedo-panel">
+        <div class="whatwedo-panel-inner"></div>
+      </div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FEATURES BENTO (React) ===== -->
+<section class="section section-feat8">
+  <div class="section-inner">
+    <div class="section-label reveal">Why SholoTech</div>
+    <h2 class="section-heading reveal reveal-delay-1">Built different, <span class="thin">built to last</span></h2>
+    <div id="features8-root"></div>
+  </div>
+</section>
+
+<!-- ===== PARTICLE TEXT ===== -->
+<section class="section section-particles">
+  <div class="section-inner">
+    <div class="section-label reveal">In Motion</div>
+    <h2 class="section-heading reveal reveal-delay-1">Build. Ship. <span class="thin">Scale.</span></h2>
+  </div>
+  <div class="particle-canvas-wrap reveal reveal-delay-2">
+    <canvas id="particle-canvas"></canvas>
+  </div>
+  <div class="particle-caption">Click and hold, then move your cursor to scatter the particles</div>
+</section>
+<script>
+(() => {
+  const canvas = document.getElementById('particle-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const WORDS = ['SHOLOTECH', 'BUILD', 'SHIP', 'SCALE', 'GROW'];
+  const PALETTE = [
+    { r: 167, g: 139, b: 250 },
+    { r: 168, g: 85, b: 247 },
+    { r: 155, g: 109, b: 255 },
+    { r: 112, g: 22, b: 239 },
+    { r: 255, g: 255, b: 255 },
+  ];
+  const PIXEL_STEP = 6;
+
+  canvas.width = 1400;
+  canvas.height = 520;
+
+  class Particle {
+    constructor() {
+      this.pos = { x: 0, y: 0 };
+      this.vel = { x: 0, y: 0 };
+      this.acc = { x: 0, y: 0 };
+      this.target = { x: 0, y: 0 };
+      this.closeEnoughTarget = 100;
+      this.maxSpeed = 1;
+      this.maxForce = 0.1;
+      this.isKilled = false;
+      this.startColor = { r: 0, g: 0, b: 0 };
+      this.targetColor = { r: 0, g: 0, b: 0 };
+      this.colorWeight = 0;
+      this.colorBlendRate = 0.01;
+    }
+    move() {
+      let proximityMult = 1;
+      const distance = Math.hypot(this.pos.x - this.target.x, this.pos.y - this.target.y);
+      if (distance < this.closeEnoughTarget) proximityMult = distance / this.closeEnoughTarget;
+
+      const towards = { x: this.target.x - this.pos.x, y: this.target.y - this.pos.y };
+      const mag = Math.hypot(towards.x, towards.y);
+      if (mag > 0) {
+        towards.x = (towards.x / mag) * this.maxSpeed * proximityMult;
+        towards.y = (towards.y / mag) * this.maxSpeed * proximityMult;
+      }
+
+      const steer = { x: towards.x - this.vel.x, y: towards.y - this.vel.y };
+      const steerMag = Math.hypot(steer.x, steer.y);
+      if (steerMag > 0) {
+        steer.x = (steer.x / steerMag) * this.maxForce;
+        steer.y = (steer.y / steerMag) * this.maxForce;
+      }
+
+      this.acc.x += steer.x;
+      this.acc.y += steer.y;
+      this.vel.x += this.acc.x;
+      this.vel.y += this.acc.y;
+      this.pos.x += this.vel.x;
+      this.pos.y += this.vel.y;
+      this.acc.x = 0;
+      this.acc.y = 0;
+    }
+    draw(ctx) {
+      if (this.colorWeight < 1) this.colorWeight = Math.min(this.colorWeight + this.colorBlendRate, 1);
+      const r = Math.round(this.startColor.r + (this.targetColor.r - this.startColor.r) * this.colorWeight);
+      const g = Math.round(this.startColor.g + (this.targetColor.g - this.startColor.g) * this.colorWeight);
+      const b = Math.round(this.startColor.b + (this.targetColor.b - this.startColor.b) * this.colorWeight);
+      ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+      ctx.fillRect(this.pos.x, this.pos.y, 2, 2);
+    }
+    kill(width, height) {
+      if (this.isKilled) return;
+      const rp = randomPos(width / 2, height / 2, (width + height) / 2);
+      this.target.x = rp.x;
+      this.target.y = rp.y;
+      this.startColor = {
+        r: this.startColor.r + (this.targetColor.r - this.startColor.r) * this.colorWeight,
+        g: this.startColor.g + (this.targetColor.g - this.startColor.g) * this.colorWeight,
+        b: this.startColor.b + (this.targetColor.b - this.startColor.b) * this.colorWeight,
+      };
+      this.targetColor = { r: 0, g: 0, b: 0 };
+      this.colorWeight = 0;
+      this.isKilled = true;
+    }
+  }
+
+  function randomPos(x, y, mag) {
+    const rx = Math.random() * canvas.width;
+    const ry = Math.random() * canvas.height;
+    const dir = { x: rx - x, y: ry - y };
+    const m = Math.hypot(dir.x, dir.y);
+    if (m > 0) {
+      dir.x = (dir.x / m) * mag;
+      dir.y = (dir.y / m) * mag;
+    }
+    return { x: x + dir.x, y: y + dir.y };
+  }
+
+  let particles = [];
+  let frameCount = 0;
+  let wordIndex = 0;
+  let running = false;
+  let rafId = null;
+  const mouse = { x: 0, y: 0, down: false };
+
+  function nextWord(word) {
+    const off = document.createElement('canvas');
+    off.width = canvas.width;
+    off.height = canvas.height;
+    const octx = off.getContext('2d');
+    octx.fillStyle = 'white';
+    octx.font = '600 160px Geist, Arial, sans-serif';
+    octx.textAlign = 'center';
+    octx.textBaseline = 'middle';
+    octx.fillText(word, canvas.width / 2, canvas.height / 2);
+
+    const { data } = octx.getImageData(0, 0, canvas.width, canvas.height);
+    const newColor = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+
+    let particleIndex = 0;
+    const coords = [];
+    for (let i = 0; i < data.length; i += PIXEL_STEP * 4) coords.push(i);
+    for (let i = coords.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [coords[i], coords[j]] = [coords[j], coords[i]];
+    }
+
+    for (const idx of coords) {
+      const alpha = data[idx + 3];
+      if (alpha <= 0) continue;
+      const x = (idx / 4) % canvas.width;
+      const y = Math.floor(idx / 4 / canvas.width);
+
+      let particle;
+      if (particleIndex < particles.length) {
+        particle = particles[particleIndex];
+        particle.isKilled = false;
+        particleIndex++;
+      } else {
+        particle = new Particle();
+        const rp = randomPos(canvas.width / 2, canvas.height / 2, (canvas.width + canvas.height) / 2);
+        particle.pos.x = rp.x;
+        particle.pos.y = rp.y;
+        particle.maxSpeed = Math.random() * 6 + 4;
+        particle.maxForce = particle.maxSpeed * 0.05;
+        particle.colorBlendRate = Math.random() * 0.0275 + 0.0025;
+        particles.push(particle);
+      }
+
+      particle.startColor = {
+        r: particle.startColor.r + (particle.targetColor.r - particle.startColor.r) * particle.colorWeight,
+        g: particle.startColor.g + (particle.targetColor.g - particle.startColor.g) * particle.colorWeight,
+        b: particle.startColor.b + (particle.targetColor.b - particle.startColor.b) * particle.colorWeight,
+      };
+      particle.targetColor = newColor;
+      particle.colorWeight = 0;
+      particle.target.x = x;
+      particle.target.y = y;
+    }
+
+    for (let i = particleIndex; i < particles.length; i++) particles[i].kill(canvas.width, canvas.height);
+  }
+
+  function animate() {
+    if (!running) return;
+    ctx.fillStyle = 'rgba(2, 2, 3, 0.12)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.move();
+      p.draw(ctx);
+      if (p.isKilled && (p.pos.x < 0 || p.pos.x > canvas.width || p.pos.y < 0 || p.pos.y > canvas.height)) {
+        particles.splice(i, 1);
+      }
+    }
+
+    if (mouse.down) {
+      particles.forEach((p) => {
+        if (Math.hypot(p.pos.x - mouse.x, p.pos.y - mouse.y) < 60) p.kill(canvas.width, canvas.height);
+      });
+    }
+
+    frameCount++;
+    if (frameCount % 240 === 0) {
+      wordIndex = (wordIndex + 1) % WORDS.length;
+      nextWord(WORDS[wordIndex]);
+    }
+
+    rafId = requestAnimationFrame(animate);
+  }
+
+  function start() {
+    if (running) return;
+    running = true;
+    rafId = requestAnimationFrame(animate);
+  }
+  function stop() {
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+  }
+
+  nextWord(WORDS[0]);
+
+  function updateMouse(e) {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    mouse.y = (e.clientY - rect.top) * (canvas.height / rect.height);
+  }
+  canvas.addEventListener('mousedown', (e) => { mouse.down = true; updateMouse(e); });
+  canvas.addEventListener('mouseup', () => { mouse.down = false; });
+  canvas.addEventListener('mouseleave', () => { mouse.down = false; });
+  canvas.addEventListener('mousemove', updateMouse);
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) start(); else stop(); });
+  }, { threshold: 0.1 }).observe(canvas);
+})();
+</script>
+
+<!-- ===== CORE PILLARS ===== -->
+<section class="section section-research">
+  <div class="section-inner">
+    <div class="research-content">
+      <div class="section-label reveal">Our Focus</div>
+      <h2 class="section-heading reveal reveal-delay-1" style="margin-bottom:48px;">Three pillars <span class="thin">of engineering</span></h2>
+      <div class="research-list">
+        <div class="research-item reveal reveal-delay-2" data-formation="1">
+          <div class="research-num">01</div>
+          <div class="research-item-content">
+            <div class="research-item-title">High-Performance Web Platforms</div>
+            <div class="research-item-desc">Architecting robust, modern web systems designed for massive concurrent traffic, zero-latency interactions, and bank-grade security.</div>
+          </div>
+        </div>
+        <div class="research-item reveal reveal-delay-3" data-formation="2">
+          <div class="research-num">02</div>
+          <div class="research-item-content">
+            <div class="research-item-title">Scalable Mobile Ecosystems</div>
+            <div class="research-item-desc">Engineering responsive iOS and Android applications utilizing native performance pipelines, smooth animations, and clean offline-first capabilities.</div>
+          </div>
+        </div>
+        <div class="research-item reveal reveal-delay-4" data-formation="3">
+          <div class="research-num">03</div>
+          <div class="research-item-content">
+            <div class="research-item-title">Enterprise Backends & APIs</div>
+            <div class="research-item-desc">Deploying microservices, high-throughput APIs, cloud-native databases, and secure payment integrations optimized for business automation.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="research-canvas-wrap" id="research-canvas"></div>
+  </div>
+</section>
+
+<!-- ===== BY THE NUMBERS ===== -->
+<section class="section section-numbers">
+  <div class="numbers-canvas-wrap" id="numbers-canvas"></div>
+  <div class="section-inner">
+    <div class="numbers-content">
+      <div class="section-label reveal">By The Numbers</div>
+      <h2 class="section-heading reveal reveal-delay-1">Numbers that <span class="thin">speak for themselves</span></h2>
+      <div class="numbers-grid">
+        <div class="number-card reveal reveal-delay-2">
+          <div class="number-val" data-count="15" data-suffix="+">0</div>
+          <div class="number-divider"></div>
+          <div class="number-label">Products launched<br>and deployed</div>
+        </div>
+        <div class="number-card reveal reveal-delay-3">
+          <div class="number-val" data-count="100" data-suffix="%">0</div>
+          <div class="number-divider"></div>
+          <div class="number-label">Client satisfaction<br>and delivery rate</div>
+        </div>
+        <div class="number-card reveal reveal-delay-4">
+          <div class="number-val" data-count="5" data-suffix="+">0</div>
+          <div class="number-divider"></div>
+          <div class="number-label">Core engineers &<br>creative designers</div>
+        </div>
+        <div class="number-card reveal reveal-delay-5">
+          <div class="number-val" data-count="24" data-suffix="/7">0</div>
+          <div class="number-divider"></div>
+          <div class="number-label">Support and active<br>development coverage</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="section section-cta">
+  <div class="cta-hills-bg" id="hills-root"></div>
+  <div class="section-inner" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+    <div class="section-label reveal">Get In Touch</div>
+    <h2 class="cta-heading reveal reveal-delay-1">Let's build something <span class="thin">extraordinary together</span></h2>
+    <p class="cta-sub reveal reveal-delay-2">Ready to turn your idea into a high-performance digital product? Partner with SholoTech and let's engineer the future of your business.</p>
+    <div class="cta-actions reveal reveal-delay-3">
+      <button class="btn-primary">Start Project <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+      <button class="btn-secondary">See Our Work</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div class="section-inner">
+    <div class="footer-top">
+      <h2 class="footer-heading reveal">Let's build something <span class="thin">great together</span></h2>
+      <div class="footer-columns">
+        <div class="footer-col reveal reveal-delay-1">
+          <a href="#">Services</a>
+          <a href="#">Our Work</a>
+          <a href="#">About Us</a>
+          <a href="#">Careers</a>
+        </div>
+        <div class="footer-col reveal reveal-delay-2">
+          <a href="#">Pricing</a>
+          <a href="#">Blog</a>
+          <a href="#">Contact</a>
+          <a href="#">Start Project</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-wordmark-wrap reveal">
+      <h2 class="footer-wordmark">SHOLOTECH</h2>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-left">
+        <div class="footer-dot"></div>
+        <span class="footer-brand">SholoTech</span>
+      </div>
+      <div class="footer-bottom-links">
+        <a href="#">About</a>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+      </div>
+      <div class="footer-right">&copy; 2026 SholoTech. All rights reserved.</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('open');
+    mobileMenu.classList.toggle('open');
+  });
+  mobileMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      hamburger.classList.remove('open');
+      mobileMenu.classList.remove('open');
+    });
+  });
+
+  // ===== NAV SCROLL EFFECT =====
+  // Drive --p (0 -> 1) directly off scroll position via rAF so the navbar
+  // morphs smoothly in both directions instead of snapping at a threshold.
+  const mainNav = document.querySelector('.nav');
+  const NAV_RANGE = 120; // px of scroll over which the morph completes
+  let navTicking = false;
+  function updateNavProgress() {
+    const p = Math.max(0, Math.min(1, document.body.scrollTop / NAV_RANGE));
+    mainNav.style.setProperty('--p', p.toFixed(4));
+    navTicking = false;
+  }
+  document.body.addEventListener('scroll', () => {
+    if (!navTicking) {
+      navTicking = true;
+      requestAnimationFrame(updateNavProgress);
+    }
+  }, { passive: true });
+  updateNavProgress();
+
+  // ===== SCROLL REVEAL =====
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+  // ===== NUMBER COUNTER =====
+  const numObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target;
+      const target = parseInt(el.dataset.count);
+      const suffix = el.dataset.suffix || '';
+      const duration = 2000;
+      const start = performance.now();
+      (function tick(now) {
+        const p = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const cur = Math.floor(eased * target);
+        el.textContent = (target >= 1000 ? cur.toLocaleString() : cur) + (p >= 1 ? suffix : '');
+        if (p < 1) requestAnimationFrame(tick);
+      })(start);
+      numObs.unobserve(el);
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.number-val[data-count]').forEach(el => numObs.observe(el));
+
+  // ===== WHAT WE DO - SCROLL DRIVEN PANEL =====
+  (() => {
+    const list = document.querySelector('.whatwedo-list');
+    const pin = document.querySelector('.whatwedo-pin');
+    if (!list || !pin) return;
+    const items = list.querySelectorAll('.whatwedo-item');
+    const indicator = list.querySelector('.whatwedo-indicator');
+    const panelInner = document.querySelector('.whatwedo-panel-inner');
+
+    function fillPanel(item, animate) {
+      const detail = item.querySelector('.whatwedo-item-detail');
+      if (!detail || !panelInner) return;
+      if (animate) {
+        panelInner.classList.add('switching');
+        setTimeout(() => {
+          panelInner.innerHTML = detail.innerHTML;
+          panelInner.classList.remove('switching');
+        }, 250);
+      } else {
+        panelInner.innerHTML = detail.innerHTML;
+      }
+    }
+
+    function setActive(item) {
+      if (item.classList.contains('active')) return;
+      items.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      if (indicator) indicator.style.transform = `translateY(${item.offsetTop}px)`;
+      fillPanel(item, true);
+    }
+
+    fillPanel(items[0], false);
+
+    items.forEach(item => {
+      item.addEventListener('click', () => setActive(item));
+    });
+
+    const isDesktop = () => window.matchMedia('(min-width: 901px)').matches;
+    let ticking = false;
+
+    function updateFromScroll() {
+      ticking = false;
+      if (!isDesktop()) return;
+      const rect = pin.getBoundingClientRect();
+      const scrollable = pin.offsetHeight - window.innerHeight;
+      if (scrollable <= 0) return;
+      const scrolled = -rect.top;
+      const progress = Math.min(1, Math.max(0, scrolled / scrollable));
+      let idx = Math.floor(progress * items.length);
+      if (idx >= items.length) idx = items.length - 1;
+      if (idx < 0) idx = 0;
+      setActive(items[idx]);
+    }
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(updateFromScroll);
+      }
+    };
+    document.body.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', updateFromScroll);
+
+    updateFromScroll();
+  })();
+
+  // ===== MOUSE-FOLLOW PURPLE GLOW =====
+  (function () {
+    const wrapper = document.querySelector('.hero-wrapper');
+    const glow = document.getElementById('hero-mouse-glow');
+    if (!wrapper || !glow) return;
+    wrapper.addEventListener('mousemove', (e) => {
+      const rect = wrapper.getBoundingClientRect();
+      glow.style.setProperty('--mx', (e.clientX - rect.left) + 'px');
+      glow.style.setProperty('--my', (e.clientY - rect.top) + 'px');
+      glow.classList.add('active');
+    });
+    wrapper.addEventListener('mouseleave', () => {
+      glow.classList.remove('active');
+    });
+  })();
+
+  // ===== ENTRANCE ANIMATION SEQUENCER =====
+  function triggerEntrance() {
+    // Fade in 3D canvas
+    document.getElementById('crt-frame').classList.add('visible');
+    // Fade in gradient overlays
+    document.querySelector('.hero-fade').classList.add('anim-in');
+    document.querySelector('.hero-fade-top').classList.add('anim-in');
+    // Nav items
+    document.querySelector('.nav-brand').classList.add('anim-in');
+    document.querySelectorAll('.nav-links a, .nav-links .nav-cta').forEach(el => el.classList.add('anim-in'));
+    document.querySelector('.nav-hamburger').classList.add('anim-in');
+    // Hero content
+    document.querySelector('.hero-h1').classList.add('anim-in');
+    document.querySelector('.hero-sub').classList.add('anim-in');
+    document.querySelector('.hero-actions').classList.add('anim-in');
+    // Stats & status
+    document.querySelectorAll('.hero-stat').forEach(el => el.classList.add('anim-in'));
+    const scrollEl = document.querySelector('.hero-scroll');
+    if (scrollEl) scrollEl.classList.add('anim-in');
+
+    // Ticker banner animation
+    const tickerEl = document.querySelector('.hero-ticker-banner');
+    if (tickerEl) tickerEl.classList.add('anim-in');
+
+    // Start interactive pixel mascots
+    initMascots();
+
+    // Rotating word in hero headline
+    startRotatingWord();
+  }
+  window.__triggerEntrance = triggerEntrance;
+
+  // ===== ROTATING WORD IN HERO HEADLINE =====
+  function startRotatingWord() {
+    const rotateEl = document.getElementById('rotate-word');
+    if (!rotateEl) return;
+    const words = ['it.', 'apps.', 'platforms.', 'products.', 'ideas.'];
+    let idx = 0;
+    const WIPE = 'cubic-bezier(0.65, 0, 0.35, 1)';
+    setInterval(() => {
+      // sweep a cover left-to-right over the current word
+      rotateEl.style.transition = 'clip-path 0.6s ' + WIPE;
+      rotateEl.style.clipPath = 'inset(0 0 0 100%)';
+      setTimeout(() => {
+        idx = (idx + 1) % words.length;
+        rotateEl.textContent = words[idx];
+        // jump instantly to fully covered (from the right side)
+        rotateEl.style.transition = 'none';
+        rotateEl.style.clipPath = 'inset(0 100% 0 0)';
+        void rotateEl.offsetWidth;
+        // sweep the cover away left-to-right, revealing the new word
+        rotateEl.style.transition = 'clip-path 0.6s ' + WIPE;
+        rotateEl.style.clipPath = 'inset(0 0 0 0)';
+      }, 600);
+    }, 2400);
+  }
+
+  // ===== INTERACTIVE PIXEL MASCOTS =====
+  let M1 = null, M2 = null;
+  let blasts = [], impacts = [], megaImpacts = [];
+  let bCv = null, bCtx = null, bW = 0, bH = 400;
+  let phase = 'patrol';
+  let fightLoopRaf = null;
+  let anyMouseIn = false;
+  let schedTimer = null;
+
+  function initMascots() {
+    const SC=3, PW=10*SC, PH=14*SC;
+    const GND=88-PH;   // ground in individual 88px mstage canvas
+    const FGND=bH-PH;  // ground in shared bH-px battle canvas
+
+    const _=0,H=1,D=2,T=3,E=4,B=5,K=6,L=7,F=8,A=9,N=10;
+
+    const SPRITES={
+    stand:[
+      [_,_,T,T,T,T,T,_,_,_],
+      [_,T,H,H,H,H,D,D,_,_],
+      [_,T,H,E,H,H,D,D,_,_],
+      [_,T,H,H,H,E,D,D,_,_],
+      [_,T,H,H,H,H,D,D,_,_],
+      [_,_,T,T,T,T,D,_,_,_],
+      [_,_,N,B,B,N,_,_,_,_],
+      [A,_,B,B,B,B,_,A,_,_],
+      [_,_,B,K,K,B,_,_,_,_],
+      [_,_,K,K,K,K,_,_,_,_],
+      [_,_,L,L,_,L,L,_,_,_],
+      [_,_,L,L,_,L,L,_,_,_],
+      [_,F,F,F,_,F,F,F,_,_],
+      [_,_,_,_,_,_,_,_,_,_],
+    ],
+    walk1:[
+      [_,_,T,T,T,T,T,_,_,_],
+      [_,T,H,H,H,H,D,D,_,_],
+      [_,T,H,E,H,H,D,D,_,_],
+      [_,T,H,H,H,E,D,D,_,_],
+      [_,T,H,H,H,H,D,D,_,_],
+      [_,_,T,T,T,T,D,_,_,_],
+      [_,_,N,B,B,N,_,_,_,_],
+      [_,A,B,B,B,B,A,_,_,_],
+      [_,_,B,K,K,B,_,_,_,_],
+      [_,_,K,K,K,K,_,_,_,_],
+      [_,L,L,_,_,_,L,L,_,_],
+      [L,L,_,_,_,_,_,L,_,_],
+      [F,F,_,_,_,_,F,F,_,_],
+      [_,_,_,_,_,_,_,_,_,_],
+    ],
+    walk2:[
+      [_,_,T,T,T,T,T,_,_,_],
+      [_,T,H,H,H,H,D,D,_,_],
+      [_,T,H,E,H,H,D,D,_,_],
+      [_,T,H,H,H,E,D,D,_,_],
+      [_,T,H,H,H,H,D,D,_,_],
+      [_,_,T,T,T,T,D,_,_,_],
+      [_,_,N,B,B,N,_,_,_,_],
+      [_,A,B,B,B,B,A,_,_,_],
+      [_,_,B,K,K,B,_,_,_,_],
+      [_,_,K,K,K,K,_,_,_,_],
+      [_,_,L,L,_,L,L,_,_,_],
+      [_,_,_,L,_,L,_,_,_,_],
+      [_,_,_,F,F,F,F,F,_,_],
+      [_,_,_,_,_,_,_,_,_,_],
+    ],
+    charge:[
+      [_,_,T,T,T,T,T,_,_,_],
+      [_,T,H,H,H,H,D,D,_,_],
+      [_,T,H,E,H,H,D,D,_,_],
+      [_,T,H,H,H,E,D,D,_,_],
+      [_,T,H,H,H,H,D,D,_,_],
+      [_,_,T,T,T,T,D,_,_,_],
+      [_,_,N,B,B,N,_,_,_,_],
+      [_,_,B,B,B,B,A,A,A,_],
+      [_,_,B,K,K,B,_,_,_,_],
+      [_,_,K,K,K,K,_,_,_,_],
+      [_,_,L,L,_,L,L,_,_,_],
+      [_,_,L,L,_,L,L,_,_,_],
+      [_,F,F,F,_,F,F,F,_,_],
+      [_,_,_,_,_,_,_,_,_,_],
+    ],
+    hit:[
+      [_,_,_,T,T,T,T,T,_,_],
+      [_,_,T,H,H,H,H,D,D,_],
+      [_,_,T,H,E,H,H,D,D,_],
+      [_,_,T,H,H,H,E,D,D,_],
+      [_,_,T,H,H,H,H,D,D,_],
+      [_,_,_,T,T,T,T,D,_,_],
+      [_,_,_,N,B,B,N,_,_,_],
+      [_,A,_,B,B,B,B,_,_,_],
+      [_,_,_,B,K,K,B,_,_,_],
+      [_,_,_,K,K,K,K,_,_,_],
+      [_,_,_,L,L,_,L,L,_,_],
+      [_,_,_,L,L,_,L,L,_,_],
+      [_,_,F,F,F,_,F,F,F,_],
+      [_,_,_,_,_,_,_,_,_,_],
+    ],
+    fall:[
+      [_,_,_,_,_,_,_,_,_,_],
+      [_,_,_,_,_,_,_,_,_,_],
+      [F,F,F,_,F,F,F,_,_,_],
+      [_,L,L,_,_,L,L,_,_,_],
+      [_,_,K,K,K,K,_,_,_,_],
+      [A,_,B,K,K,B,_,A,_,_],
+      [_,_,N,B,B,N,_,_,_,_],
+      [_,_,T,T,T,T,D,_,_,_],
+      [_,T,H,H,H,H,D,D,_,_],
+      [_,T,H,E,H,H,D,D,_,_],
+      [_,T,H,H,H,E,D,D,_,_],
+      [_,T,H,H,H,H,D,D,_,_],
+      [_,_,T,T,T,T,D,_,_,_],
+      [_,_,_,_,_,_,_,_,_,_],
+    ],
+    victory:[
+      [A,_,T,T,T,T,T,_,A,_],
+      [A,T,H,H,H,H,D,D,A,_],
+      [_,T,H,E,H,H,D,D,_,_],
+      [_,T,H,H,H,E,D,D,_,_],
+      [_,T,H,H,H,H,D,D,_,_],
+      [_,_,T,T,T,T,D,_,_,_],
+      [_,_,N,B,B,N,_,_,_,_],
+      [_,_,B,B,B,B,_,_,_,_],
+      [_,_,B,K,K,B,_,_,_,_],
+      [_,_,K,K,K,K,_,_,_,_],
+      [_,_,L,L,_,L,L,_,_,_],
+      [_,_,L,L,_,L,L,_,_,_],
+      [_,F,F,F,_,F,F,F,_,_],
+      [_,_,_,_,_,_,_,_,_,_],
+    ],
+    };
+
+    const COL={
+      0:null,
+      1:'#9B6DFF',2:'#5B30CC',3:'#C4A0FF',
+      4:'#F0E0FF',5:'#7B50DD',6:'#3A1A99',
+      7:'#8860EE',8:'#4A25BB',9:'#BB90FF',10:'#D0B8FF',
+    };
+
+    function drawChar(ctx,name,x,y,flip){
+      const g=SPRITES[name]||SPRITES.stand;
+      ctx.save();
+      if(flip){ctx.translate(x+PW,y);ctx.scale(-1,1);ctx.translate(-x,-y);}
+      for(let r=0;r<g.length;r++)
+        for(let c=0;c<g[r].length;c++){
+          const v=g[r][c];if(!v)continue;
+          ctx.fillStyle=COL[v];
+          ctx.fillRect(x+c*SC,y+r*SC,SC,SC);
+        }
+      ctx.restore();
+    }
+
+    class Blast{
+      constructor(x,y,vx){
+        this.x=x;this.y=y;this.vx=vx;
+        this.alive=true;this.r=8;
+        this.trail=[];this.parts=[];this.pulse=0;
+      }
+      update(){
+        this.x+=this.vx;this.pulse+=0.22;
+        this.trail.unshift({x:this.x,y:this.y,a:0.9});
+        if(this.trail.length>16)this.trail.pop();
+        this.trail.forEach(t=>t.a-=0.055);
+        if(Math.random()<0.7){
+          const ang=Math.random()*Math.PI*2;
+          this.parts.push({
+            x:this.x+Math.cos(ang)*this.r*0.7,
+            y:this.y+Math.sin(ang)*this.r*0.7,
+            vx:(Math.random()-0.5)*2.5+this.vx*0.15,
+            vy:(Math.random()-0.5)*2-1.2,
+            life:1,s:Math.random()*3+1.5,
+          });
+        }
+        this.parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.life-=0.045;});
+        this.parts=this.parts.filter(p=>p.life>0);
+      }
+      draw(ctx){
+        this.trail.forEach((t,i)=>{
+          const s=this.r*(0.3+(i/this.trail.length)*0.7);
+          ctx.save();ctx.globalAlpha=Math.max(0,t.a)*0.55;
+          ctx.fillStyle='#7B30FF';
+          ctx.beginPath();ctx.arc(t.x,t.y,s,0,Math.PI*2);ctx.fill();
+          ctx.restore();
+        });
+        this.parts.forEach(p=>{
+          ctx.save();ctx.globalAlpha=p.life*0.9;
+          ctx.fillStyle=p.life>0.5?'#C4A0FF':'#9B6DFF';
+          ctx.beginPath();ctx.arc(p.x,p.y,p.s*p.life,0,Math.PI*2);ctx.fill();
+          ctx.restore();
+        });
+        const pw=Math.sin(this.pulse)*1.5;
+        [[this.r*3,'rgba(112,30,255,0.12)'],[this.r*1.8,'rgba(155,109,255,0.4)'],[this.r+pw,'#9B6DFF']].forEach(([r,c])=>{
+          ctx.save();ctx.globalAlpha=1;ctx.fillStyle=c;
+          ctx.beginPath();ctx.arc(this.x,this.y,Math.max(0.1,r),0,Math.PI*2);ctx.fill();ctx.restore();
+        });
+        ctx.save();ctx.globalAlpha=0.92;ctx.fillStyle='#fff';
+        ctx.beginPath();ctx.arc(this.x-this.r*0.2,this.y-this.r*0.25,this.r*0.38,0,Math.PI*2);
+        ctx.fill();ctx.restore();
+      }
+    }
+
+    class MegaImpact{
+      // A combined explosion when two fireballs collide mid-air
+      constructor(x,y){
+        this.x=x; this.y=y; this.done=false; this.age=0;
+        const cols=['#9B6DFF','#C4A0FF','#fff','#7B30FF','#E0D0FF','#ffffff'];
+        this.parts=Array.from({length:28},()=>{
+          const ang=Math.random()*Math.PI*2, spd=Math.random()*5+2;
+          return{x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd-2,
+                 life:1, s:Math.random()*5+1.5,
+                 col:cols[Math.floor(Math.random()*cols.length)]};
+        });
+        this.rings=[
+          {r:4,max:45,a:1},
+          {r:4,max:70,a:0.6},
+          {r:4,max:28,a:0.9},
+        ];
+        this.shockwave={r:5,max:90,a:0.55};
+      }
+      update(){
+        this.age++;
+        this.parts.forEach(p=>{
+          p.x+=p.vx; p.y+=p.vy; p.vy+=0.22; p.life-=0.028;
+          p.vx*=0.97;
+        });
+        this.parts=this.parts.filter(p=>p.life>0);
+        this.rings.forEach(r=>{
+          r.r=Math.min(r.max, r.r+4);
+          r.a=Math.max(0, r.a-0.05);
+        });
+        this.shockwave.r=Math.min(this.shockwave.max, this.shockwave.r+6);
+        this.shockwave.a=Math.max(0, this.shockwave.a-0.022);
+        if(!this.parts.length&&this.rings[0].a<=0&&this.shockwave.a<=0) this.done=true;
+      }
+      draw(ctx){
+        // Outer shockwave ring
+        if(this.shockwave.a>0){
+          ctx.save(); ctx.globalAlpha=this.shockwave.a;
+          ctx.strokeStyle='#C4A0FF'; ctx.lineWidth=3;
+          ctx.beginPath(); ctx.arc(this.x,this.y,this.shockwave.r,0,Math.PI*2); ctx.stroke();
+          ctx.restore();
+        }
+        // Expanding rings
+        this.rings.forEach((r,i)=>{
+          if(r.a<=0) return;
+          const cols=['#9B6DFF','#C4A0FF','#ffffff'];
+          ctx.save(); ctx.globalAlpha=r.a; ctx.strokeStyle=cols[i];
+          ctx.lineWidth=2; ctx.beginPath(); ctx.arc(this.x,this.y,r.r,0,Math.PI*2);
+          ctx.stroke(); ctx.restore();
+        });
+        // Hot core flash
+        if(this.age<14){
+          const coreA=Math.max(0,0.85-(this.age/14)*0.85);
+          ctx.save(); ctx.globalAlpha=coreA;
+          const g=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,22);
+          g.addColorStop(0,'rgba(255,255,255,1)');
+          g.addColorStop(0.3,'rgba(180,130,255,0.9)');
+          g.addColorStop(1,'rgba(100,30,255,0)');
+          ctx.fillStyle=g;
+          ctx.beginPath(); ctx.arc(this.x,this.y,22,0,Math.PI*2); ctx.fill();
+          ctx.restore();
+        }
+        // Particles
+        this.parts.forEach(p=>{
+          ctx.save(); ctx.globalAlpha=p.life*0.92; ctx.fillStyle=p.col;
+          ctx.beginPath(); ctx.arc(p.x,p.y,p.s*p.life,0,Math.PI*2); ctx.fill();
+          ctx.restore();
+        });
+      }
+    }
+
+    class Impact{
+      constructor(x,y){
+        this.x=x;this.y=y;this.done=false;
+        this.parts=Array.from({length:24},()=>{
+          const ang=Math.random()*Math.PI*2,spd=Math.random()*6+2;
+          return{x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd-3,
+                 life:1,s:Math.random()*5+2,
+                 col:['#9B6DFF','#C4A0FF','#fff'][Math.floor(Math.random()*3)]};
+        });
+        this.rings=[{r:3,max:40,a:1},{r:3,max:65,a:0.5}];
+      }
+      update(){
+        this.parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.28;p.life-=0.038;});
+        this.parts=this.parts.filter(p=>p.life>0);
+        this.rings.forEach(r=>{
+          r.r=Math.min(r.max,r.r+4);
+          r.a=Math.max(0,r.a-0.05);
+        });
+        if(!this.parts.length&&this.rings[0].a<=0)this.done=true;
+      }
+      draw(ctx){
+        this.rings.forEach(r=>{
+          ctx.save();ctx.globalAlpha=r.a;ctx.strokeStyle='#C4A0FF';
+          ctx.lineWidth=2;ctx.beginPath();ctx.arc(this.x,this.y,r.r,0,Math.PI*2);
+          ctx.stroke();ctx.restore();
+        });
+        this.parts.forEach(p=>{
+          ctx.save();ctx.globalAlpha=p.life;ctx.fillStyle=p.col;
+          ctx.beginPath();ctx.arc(p.x,p.y,p.s*p.life,0,Math.PI*2);ctx.fill();ctx.restore();
+        });
+      }
+    }
+
+    function initBCv(){
+      const row=document.getElementById('brow');
+      if(!row) return;
+      if(!bCv){
+        bCv=document.createElement('canvas');
+        bCv.style.cssText=`position:absolute;bottom:${document.getElementById('b1').offsetHeight}px;
+          left:0;pointer-events:none;z-index:40;`;
+        row.style.position='relative';
+        row.appendChild(bCv);
+      }
+      bW=row.offsetWidth;
+      bCv.width=bW;bCv.height=bH;
+      bCv.style.bottom=document.getElementById('b1').offsetHeight+'px';
+      bCtx=bCv.getContext('2d');
+    }
+
+    function schedNextFight(){
+      clearTimeout(schedTimer);
+      schedTimer=setTimeout(()=>{
+        if(!anyMouseIn&&M1&&M2) beginFight();
+      },3800);
+    }
+
+    function beginFight(){
+      if(phase==='fighting')return;
+      phase='fighting';
+      blasts=[];impacts=[];megaImpacts=[];
+      initBCv();
+      // Both mascots get random independent HP — fight outcome is fully emergent
+      const hp1 = 3 + Math.floor(Math.random()*4); // 3 to 6 hits
+      const hp2 = 3 + Math.floor(Math.random()*4); // 3 to 6 hits
+      // Stagger M2 by ~400ms so they fire alternately, not simultaneously
+      M1.startFight('right', hp1, 0);
+      M2.startFight('left',  hp2, 380+Math.random()*200);
+      fightLoopRaf=requestAnimationFrame(fightLoop);
+    }
+
+    function fightLoop(){
+      if(!bCtx){fightLoopRaf=requestAnimationFrame(fightLoop);return;}
+      bCtx.clearRect(0,0,bW,bH);
+
+      blasts.forEach(b=>b.update());
+      blasts=blasts.filter(b=>b.alive&&b.x>-60&&b.x<bW+60);
+
+      // ── BLAST-VS-BLAST COLLISION ────────────────────────────────────────────
+      // Detect when two opposing fireballs meet mid-air
+      for(let i=0;i<blasts.length;i++){
+        for(let j=i+1;j<blasts.length;j++){
+          const a=blasts[i], b=blasts[j];
+          if(!a.alive||!b.alive) continue;
+          // Only collide if they're travelling in opposite directions
+          if(a.vx*b.vx>=0) continue;
+          const dx=a.x-b.x, dy=a.y-b.y;
+          const dist=Math.sqrt(dx*dx+dy*dy);
+          if(dist<(a.r+b.r)*1.6){
+            // COLLISION!
+            a.alive=false; b.alive=false;
+            const cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
+            megaImpacts.push(new MegaImpact(cx,cy));
+
+            // (Screen flash removed to keep background clean)
+
+
+            // 30% chance: MEGA BLAST — both mascots take a hit from the shockwave!
+            if(Math.random()<0.30){
+              // Short delay so the explosion plays before they react
+              setTimeout(()=>{
+                if(phase!=='fighting') return;
+                [M1,M2].forEach(m=>{
+                  if(m && m.mstate!=='fight_fall'){
+                    m.receiveHit();
+                    m.wrap.classList.remove('shake');
+                    void m.wrap.offsetWidth;
+                    m.wrap.classList.add('shake');
+                  }
+                });
+              }, 200);
+            }
+          }
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────────
+
+      blasts.forEach(b=>b.draw(bCtx));
+
+      const row=document.getElementById('brow');
+      if(!row) return;
+      const rowR=row.getBoundingClientRect();
+
+      // Draw active mascots on the shared canvas
+      [M1,M2].forEach(m => {
+        if(m && m.mstate.startsWith('fight_')) {
+          m.drawOnShared(bCtx, rowR.left);
+        }
+      });
+
+      [M1,M2].forEach(target=>{
+        const other=target===M1?M2:M1;
+        const btnR=target.btn.getBoundingClientRect();
+        const tx=btnR.left-rowR.left+target.x;
+        const ty=bH-PH;
+        blasts.forEach(b=>{
+          if(!b.alive)return;
+          const fromOther=(other.fightDir===1&&b.vx>0)||(other.fightDir===-1&&b.vx<0);
+          if(!fromOther)return;
+          if(b.x>tx-8&&b.x<tx+PW+8&&b.y>ty-8&&b.y<ty+PH+8){
+            b.alive=false;
+            impacts.push(new Impact(b.x,b.y));
+            // (Screen flash removed)
+
+            target.receiveHit();
+            target.wrap.classList.remove('shake');
+            void target.wrap.offsetWidth;
+            target.wrap.classList.add('shake');
+          }
+        });
+      });
+
+      megaImpacts.forEach(mi=>mi.update());
+      megaImpacts=megaImpacts.filter(mi=>!mi.done);
+      megaImpacts.forEach(mi=>mi.draw(bCtx));
+
+      impacts.forEach(im=>im.update());
+      impacts=impacts.filter(im=>!im.done);
+      impacts.forEach(im=>im.draw(bCtx));
+
+      if(phase==='fighting' || phase==='done') fightLoopRaf=requestAnimationFrame(fightLoop);
+      else{
+        if(bCtx) bCtx.clearRect(0,0,bW,bH);
+        blasts=[];impacts=[];megaImpacts=[];
+      }
+    }
+
+    function onBattleOver(){
+      if(phase==='done') return; // guard against double-call
+      phase='done';
+      blasts=[];impacts=[];megaImpacts=[];
+
+      // Check for DRAW (MEGA BLAST knocked both out)
+      const bothFalling = M1 && M2 &&
+                          M1.mstate==='fight_fall' &&
+                          M2.mstate==='fight_fall';
+
+      if(bothFalling){
+        // DRAW — no winners, both stagger and head back
+        // (Screen flash removed)
+
+      } else {
+        // Normal win — whoever is NOT falling is the winner
+        [M1,M2].forEach(m=>{
+          if(m && m.mstate!=='fight_fall') m.isWinner=true;
+        });
+      }
+
+      setTimeout(()=>{
+        M1.backToPatrol();
+        M2.backToPatrol();
+        phase='patrol';
+        schedNextFight();
+      },2200);
+    }
+
+    class Mascot{
+      constructor(cid,btnId,wrapId,startAutoDir){
+        this.cv=document.getElementById(cid);
+        this.ctx=this.cv.getContext('2d');
+        this.btn=document.getElementById(btnId);
+        this.wrap=document.getElementById(wrapId);
+        this._resize();
+        this.x=this.MAX/2; this.y=0;
+        this.velY=0; this.onGround=true;
+        this.dir=startAutoDir; this.autoDir=startAutoDir;
+        this.wt=0; this.ws=0;
+        this.mouseIn=false; this.targetX=this.MAX/2;
+        this.idleT=0; this.jumpCd=0; this.landT=0;
+        this.mstate='patrol';
+        this.fightDir=1;
+        this.isWinner=false;
+        this.hitsTaken=0; this.maxHits=0;
+        this.shootCd=0;
+        this.fallVX=0; this.fallRot=0;
+        this.battleT=0;
+        this.notifiedOver=false;
+        this.sparkAngle=0;
+        this.last=performance.now();
+        this._bind();
+        requestAnimationFrame(t=>this._loop(t));
+      }
+
+      _resize(){
+        this.cv.width=this.btn.offsetWidth||200;
+        this.cv.height=88;
+        this.MAX=this.cv.width-PW-2;
+      }
+
+      _bind(){
+        this.btn.addEventListener('mouseenter',e=>{
+          anyMouseIn=true; this.mouseIn=true;
+          clearTimeout(schedTimer);
+          if(phase==='fighting'||phase==='done'){
+            phase='interrupted';
+            cancelAnimationFrame(fightLoopRaf);
+            if(bCtx)bCtx.clearRect(0,0,bW,bH);
+            blasts=[];impacts=[];
+            M1.backToPatrol(); M2.backToPatrol();
+          }
+          this._resize();
+          this.mstate='follow';
+          this.targetX=this._mx(e); this.idleT=0;
+        });
+        this.btn.addEventListener('mousemove',e=>{
+          this.targetX=this._mx(e); this.idleT=0;
+          if(this.mstate==='idle')this.mstate='follow';
+        });
+        this.btn.addEventListener('mouseleave',()=>{
+          this.mouseIn=false;
+          anyMouseIn=(M1&&M1.mouseIn)||(M2&&M2.mouseIn);
+          if(!anyMouseIn){
+            this.mstate='patrol';
+            if(phase!=='fighting'&&phase!=='done') schedNextFight();
+          }
+        });
+      }
+
+      _mx(e){
+        const r=this.btn.getBoundingClientRect();
+        return Math.max(2,Math.min(this.MAX,e.clientX-r.left-PW/2));
+      }
+
+      startFight(faceDir, hp, staggerMs=0){
+        this.isWinner=false; // determined at end of fight
+        this.fightDir=faceDir==='right'?1:-1;
+        this.dir=this.fightDir;
+        this.hitsTaken=0;
+        this.maxHits=hp;
+        this.hitFlash=false;
+        // Stagger so M1 and M2 don't fire simultaneously
+        this.shootCd=600+Math.random()*500+staggerMs;
+        this.battleT=0;
+        this.notifiedOver=false;
+        this.mstate='fight_charge';
+      }
+
+      receiveHit(){
+        if(this.mstate==='fight_fall'){
+          // Physics reaction when hit while already falling/fallen: extra slide & spin force
+          this.fallVX += this.fightDir * (-2.2);
+          this.fallRot += this.fightDir * (-40);
+          this.notifiedOver = false; // reset notification to let the new fall motion finish
+          return;
+        }
+        this.hitsTaken++;
+        if(this.hitsTaken>=this.maxHits){
+          this.mstate='fight_fall';
+          this.fallVX=this.fightDir*(-3.8);
+          this.fallRot=0;
+          this.battleT=0;
+          // The OTHER mascot is the winner — mark it now
+          const winner = (this === M1) ? M2 : M1;
+          if(winner) winner.isWinner = true;
+        } else {
+          // Knocked back but still fighting — recoil animation
+          this.mstate='fight_hit';
+          this.battleT=420;
+          // Slide back a little on the button
+          this.x = Math.max(2, Math.min(this.MAX, this.x + this.fightDir * (-8)));
+        }
+      }
+
+      backToPatrol(){
+        this.mstate='patrol';
+        this.y=0; this.velY=0; this.onGround=true;
+        this.dir=this.autoDir;
+        this.fallRot=0; this.notifiedOver=false;
+      }
+
+      _doJump(){
+        if(!this.onGround)return;
+        this.velY=-4.2; this.onGround=false; this.jumpCd=0;
+        this.wrap.classList.remove('bounce');
+        void this.wrap.offsetWidth;
+        this.wrap.classList.add('bounce');
+      }
+
+      _loop(now){
+        const dt=Math.min(now-this.last,40); this.last=now;
+        this.jumpCd=Math.max(0,this.jumpCd-dt);
+        this.landT=Math.max(0,this.landT-dt);
+        this.battleT=Math.max(0,this.battleT-dt);
+
+        const ctx=this.ctx;
+        ctx.clearRect(0,0,this.cv.width,88);
+
+        const ms=this.mstate;
+
+        if(ms==='patrol'||ms==='follow'||ms==='idle'){
+          if(!this.onGround){
+            this.velY+=0.38; this.y+=this.velY;
+            if(this.y>=0){
+              this.y=0;this.velY=0;this.onGround=true;
+              this.landT=110;this.jumpCd=580;
+            }
+          }
+          if(ms==='patrol'){
+            this.x+=this.autoDir*0.52; this.dir=this.autoDir;
+            if(this.x>=this.MAX)this.autoDir=-1;
+            if(this.x<=2)this.autoDir=1;
+          } else if(ms==='follow'){
+            const dx=this.targetX-this.x;
+            if(Math.abs(dx)>3){
+              this.dir=dx>0?1:-1;
+              this.x+=this.dir*Math.min(Math.abs(dx)*0.14,4.5);
+              this.idleT=0;
+            } else {
+              this.x+=(this.targetX-this.x)*0.15;
+              this.idleT+=dt;
+              if(this.idleT>750)this.mstate='idle';
+            }
+          } else if(ms==='idle'){
+            this.idleT+=dt;
+            if(this.onGround&&this.jumpCd===0) this._doJump();
+          }
+          this.x=Math.max(2,Math.min(this.MAX,this.x));
+
+          let fr='stand';
+          if(!this.onGround) fr='walk1';
+          else if(ms==='patrol'||ms==='follow'){
+            const mv=ms==='patrol'||Math.abs(this.targetX-this.x)>4;
+            if(mv){this.wt+=dt;if(this.wt>112){this.wt=0;this.ws=1-this.ws;}fr=this.ws?'walk1':'walk2';}
+          }
+          drawChar(ctx,fr,Math.round(this.x),GND,this.dir===-1);
+          this._drawShadow(ctx,this.x,1);
+        }
+
+        else if(ms==='fight_charge'||ms==='fight_shoot'){
+          this.shootCd-=dt;
+          if(this.shootCd<=0&&ms==='fight_charge'){
+            this.mstate='fight_shoot';
+            this.battleT=250;
+            this._firePower();
+            this.shootCd=900+Math.random()*700;
+          }
+          if(ms==='fight_shoot'&&this.battleT<=0) this.mstate='fight_charge';
+          this.x=Math.max(2,Math.min(this.MAX,this.x));
+        }
+
+        else if(ms==='fight_hit'){
+          // Recoil — stun briefly then return to fighting
+          this.hitFlash = (this.battleT > 200); // flash for first half of stun
+          if(this.battleT<=0){
+            this.mstate='fight_charge';
+            // Shoot back sooner after getting hit — angry retaliation!
+            this.shootCd = 300 + Math.random()*400;
+            this.hitFlash = false;
+          }
+        }
+
+        else if(ms==='fight_fall'){
+          this.fallVX*=0.93;
+          this.x+=this.fallVX;
+          this.fallRot+=this.fallVX*2.8;
+          this.battleT+=dt;
+          // Clamp x so it stays ON the button, sliding to the edge but never falling outside of it
+          this.x=Math.max(2,Math.min(this.MAX,this.x));
+
+          if(Math.abs(this.fallVX)<0.35&&!this.notifiedOver){
+            this.notifiedOver=true;
+            onBattleOver();
+          }
+        }
+
+        if(ms!=='fight_fall'&&ms!=='patrol'&&ms!=='follow'&&ms!=='idle'&&this.isWinner&&phase==='done'){
+          this.mstate='fight_victory';
+        }
+
+        requestAnimationFrame(t=>this._loop(t));
+      }
+
+      drawOnShared(ctx, rowLeft){
+        const btnR = this.btn.getBoundingClientRect();
+        const rx = btnR.left - rowLeft + this.x;
+        const ms = this.mstate;
+
+        if(ms==='fight_charge'||ms==='fight_shoot'){
+          drawChar(ctx, 'charge', Math.round(rx), FGND, this.fightDir===-1);
+          this._drawChargeGlow(ctx, rx);
+          this._drawShadow(ctx, rx, 1, bH);
+        }
+        else if(ms==='fight_hit'){
+          // White flash ring on hit
+          if(this.hitFlash){
+            ctx.save();
+            const pulse = 0.5 + 0.5*Math.sin(Date.now()*0.04);
+            ctx.globalAlpha = 0.55 * pulse;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(Math.round(rx)+PW/2, FGND+PH/2, PW*0.75, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.restore();
+          }
+          drawChar(ctx, 'hit', Math.round(rx), FGND, this.fightDir===-1);
+          this._drawShadow(ctx, rx, 1, bH);
+        }
+        else if(ms==='fight_fall'){
+          ctx.save();
+          ctx.translate(Math.round(rx)+PW/2, FGND+PH/2);
+          ctx.rotate(this.fallRot*Math.PI/180);
+          ctx.translate(-PW/2,-PH/2);
+          drawChar(ctx,'fall',0,0,this.fightDir===1);
+          ctx.restore();
+          this._drawShadow(ctx, rx, 1, bH);
+        }
+        else if(ms==='fight_victory'){
+          drawChar(ctx, 'victory', Math.round(rx), FGND, this.fightDir===-1);
+          this._drawSparkles(ctx, Math.round(rx));
+          this._drawShadow(ctx, rx, 1, bH);
+
+          // Draw floating yellow trophy above head
+          const bob = Math.sin(Date.now() * 0.007) * 3;
+          this._drawTrophy(ctx, rx + 4, FGND - 28 + bob);
+        }
+      }
+
+      _firePower(){
+        const row=document.getElementById('brow');
+        if(!row) return;
+        const rowR=row.getBoundingClientRect();
+        const btnR=this.btn.getBoundingClientRect();
+        const bx=btnR.left-rowR.left+this.x+(this.fightDir===1?PW:0);
+        const by=bH-PH*0.5;
+        const speed=6;
+        blasts.push(new Blast(bx,by,this.fightDir*speed));
+      }
+
+      _drawChargeGlow(ctx, rx = this.x){
+        const gx=this.fightDir===1?rx+PW:rx;
+        const gy=FGND+PH*0.55;
+        const r=5+Math.sin(Date.now()*0.009)*2.5;
+        ctx.save();
+        const g=ctx.createRadialGradient(gx,gy,0,gx,gy,r*3.5);
+        g.addColorStop(0,'rgba(255,255,255,0.95)');
+        g.addColorStop(0.3,'rgba(196,160,255,0.7)');
+        g.addColorStop(1,'rgba(112,48,255,0)');
+        ctx.globalAlpha=0.85;ctx.fillStyle=g;
+        ctx.beginPath();ctx.arc(gx,gy,r*3.5,0,Math.PI*2);ctx.fill();
+        ctx.restore();
+      }
+
+      _drawSparkles(ctx,px){
+        for(let i=0;i<4;i++){
+          const ang=this.sparkAngle+i*1.57;
+          const sx=px+PW/2+Math.cos(ang)*20;
+          const sy=FGND+PH*0.25+Math.sin(ang)*12;
+          const r=i%2===0?3.5:2;
+          ctx.save();ctx.globalAlpha=0.9;
+          ctx.fillStyle=i<2?'#fff':'#C4A0FF';
+          ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();
+          ctx.restore();
+          ctx.save();ctx.globalAlpha=0.5;ctx.strokeStyle='#C4A0FF';ctx.lineWidth=1;
+          for(let j=0;j<4;j++){
+            const ra=ang+j*0.785;
+            ctx.beginPath();ctx.moveTo(sx,sy);
+            ctx.lineTo(sx+Math.cos(ra)*6,sy+Math.sin(ra)*6);ctx.stroke();
+          }
+          ctx.restore();
+        }
+      }
+
+      _drawShadow(ctx,x,alpha,canvasH=88){
+        ctx.globalAlpha=0.18*alpha;ctx.fillStyle='#7016EF';
+        ctx.beginPath();ctx.ellipse(x+PW/2,canvasH-1,PW*0.4,2.5,0,0,Math.PI*2);
+        ctx.fill();ctx.globalAlpha=1;
+      }
+
+      _drawTrophy(ctx, tx, ty){
+        const trophy = [
+          [1,1,1,1,1,1,1],
+          [1,2,1,1,1,2,1],
+          [1,2,1,1,1,2,1],
+          [0,1,1,1,1,1,0],
+          [0,0,1,1,1,0,0],
+          [0,0,0,1,0,0,0],
+          [0,0,1,1,1,0,0],
+          [0,1,1,1,1,1,0]
+        ];
+        const colors = {
+          1: '#FFD700', // Gold Yellow
+          2: '#FFA500', // Orange Accent
+        };
+        const sc = 3;
+        for(let r=0; r<trophy.length; r++) {
+          for(let c=0; c<trophy[r].length; c++) {
+            const v = trophy[r][c];
+            if(!v) continue;
+            ctx.fillStyle = colors[v];
+            ctx.fillRect(tx + c*sc, ty + r*sc, sc, sc);
+          }
+        }
+      }
+    }
+
+    M1=new Mascot('c1','b1','w1',1);
+    M2=new Mascot('c2','b2','w2',-1);
+    phase='patrol';
+    schedNextFight();
+
+    window.addEventListener('resize', () => {
+      if(M1) M1._resize();
+      if(M2) M2._resize();
+      if(phase==='fighting') initBCv();
+    }, { passive: true });
+  }
+</script>
+<script type="module" src="./index.js"></script>
+<script type="module" src="/src/features8/main.jsx"></script>
+<script type="module" src="/src/floaticons/main.jsx"></script>
+<script type="module" src="/src/hills/main.jsx"></script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+.wrap{
+  width:100%;background:#000;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  min-height:600px;padding:10px 0 16px;
+  overflow:hidden;
+}
+.rbtn{
+  margin-top:14px;background:transparent;
+  border:1px solid rgba(124,58,237,0.4);
+  color:rgba(255,255,255,0.4);font-size:12px;
+  padding:5px 20px;border-radius:20px;cursor:pointer;
+  letter-spacing:0.06em;transition:all 0.2s;
+}
+.rbtn:hover{border-color:#7c3aed;color:#fff}
+</style>
+
+<div class="wrap">
+  <canvas id="cv" width="560" height="560"></canvas>
+  <button class="rbtn" onclick="play()">↺ Replay</button>
+</div>
+
+<script>
+const cv=document.getElementById('cv');
+const G=cv.getContext('2d');
+const W=560,H=560,C=280;
+
+// Scale canvas display to fit
+cv.style.width='min(560px,96vw)';
+cv.style.height='min(560px,96vw)';
+
+const PURPLE='#7016EF';
+const SW=20;
+const DR=10;
+
+// Logo radius = 170px, centered at 280,280
+const LR=170;
+
+// 6 DOTS — exact normalized angles from pixel analysis
+// angle(deg), normDist
+const RAW=[
+  {a:-88,  nd:0.953, label:'Innovation' },
+  {a:-44.8,nd:0.888, label:'Precision'  },
+  {a:0.2,  nd:0.942, label:'Growth'     },
+  {a:88,   nd:0.953, label:'Reliability'},
+  {a:179.8,nd:0.940, label:'Reach'      },
+  {a:133.1,nd:0.860, label:'Excellence' },
+];
+
+function r2d(a){return a*Math.PI/180}
+
+const DOTS=RAW.map(d=>{
+  const dist=d.nd*LR;
+  const x=C+Math.cos(r2d(d.a))*dist;
+  const y=C+Math.sin(r2d(d.a))*dist;
+  const nx=Math.cos(r2d(d.a));
+  const ny=Math.sin(r2d(d.a));
+  // text offset: keep close to the dot so label feels connected
+  const OFF=36;
+  let tx=x+nx*OFF;
+  let ty=y+ny*OFF;
+  // text align based on direction
+  let align='center';
+  if(nx<-0.4) align='right';
+  if(nx>0.4)  align='left';
+  let base='middle';
+  if(ny<-0.35) base='bottom';
+  if(ny>0.35)  base='top';
+  return {x,y,nx,ny,label:d.label,tx,ty,align,base};
+});
+
+// RAYS — normalized inner/outer endpoints
+const RAYS_N=[
+  [0.026,-0.178, 0.039,-0.773],
+  [-0.107,-0.139,-0.622,-0.673],
+  [0.158,-0.147, 0.525,-0.521],
+  [-0.158,0.005,-0.757,0.005],
+  [0.226,0.004,  0.778,0.007],
+  [-0.110,0.134,-0.475,0.523],
+  [0.169,0.143,  0.697,0.655],
+  [0.024,0.190,  0.041,0.781],
+];
+const RAYS=RAYS_N.map(r=>({
+  x1:C+r[0]*LR, y1:C+r[1]*LR,
+  x2:C+r[2]*LR, y2:C+r[3]*LR,
+}));
+const RAY_ORDER=[0,7,3,4,1,2,5,6];
+
+function ease3(t){return 1-Math.pow(1-t,3)}
+function easeBack(t){const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)}
+function easeIO(t){return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2}
+function pr(t,s,d){return Math.max(0,Math.min(1,(t-s)/d))}
+
+function drawDot(x,y,r,a){
+  if(a<=0||r<=0)return;
+  G.save();G.globalAlpha=a;
+  G.fillStyle=PURPLE;
+  G.beginPath();G.arc(x,y,r,0,Math.PI*2);G.fill();
+  G.restore();
+}
+
+function drawLabel(d,a){
+  if(a<=0)return;
+  G.save();
+  G.globalAlpha=a;
+  G.font='bold 17px -apple-system,"SF Pro Display","Segoe UI",sans-serif';
+  G.fillStyle='#ffffff';
+  G.textAlign=d.align==='right'?'right':d.align==='left'?'left':'center';
+  G.textBaseline=d.base;
+  G.fillText(d.label,d.tx,d.ty);
+  G.restore();
+}
+
+function drawRay(r,p,a){
+  if(p<=0||a<=0)return;
+  G.save();G.globalAlpha=a;
+  G.strokeStyle=PURPLE;G.lineWidth=SW;G.lineCap='round';
+  G.beginPath();G.moveTo(r.x1,r.y1);
+  G.lineTo(r.x1+(r.x2-r.x1)*p,r.y1+(r.y2-r.y1)*p);
+  G.stroke();G.restore();
+}
+
+// TIMELINE
+// 0.3–3.2s : dots + text appear staggered
+// 3.2–3.8s : text fades out
+// 3.8–6.0s : rays draw in
+// 6.0–6.3s : tiny hold
+// 6.3–9.0s : ZOOM (scale up fast, center stays)
+// 9.0–9.8s : fade to pure black
+
+const TS={
+  dotStart:300, dotStagger:430, dotDur:380,
+  textFadeStart:3200, textFadeDur:550,
+  rayStart:3800, rayStagger:190, rayDur:480,
+  holdEnd:6100,
+  zoomStart:6100, zoomDur:2600,
+  blackStart:8700, blackDur:700,
+  end:9500,
+};
+
+let raf,t0;
+
+function fullLogo(alpha){
+  // draw all dots + rays at full — used inside zoom transform
+  DOTS.forEach(d=>{
+    drawDot(d.x,d.y,DR,alpha);
+  });
+  RAYS.forEach(r=>drawRay(r,1,alpha));
+}
+
+function frame(now){
+  const t=now-t0;
+
+  // Once we hit black, just black and stop
+  if(t>=TS.blackStart+TS.blackDur){
+    G.fillStyle='#000';G.fillRect(0,0,W,H);
+    return;
+  }
+
+  G.clearRect(0,0,W,H);
+
+  const inZoom = t>=TS.zoomStart && t<TS.blackStart+TS.blackDur;
+  const zp = inZoom ? pr(t,TS.zoomStart,TS.zoomDur) : 0;
+  const scale = inZoom ? 1+easeIO(zp)*16 : 1;
+
+  // ── ZOOM LAYER: only during zoom phase ──
+  if(inZoom){
+    // Fade out normal layer, fade in zoomed layer
+    const logoAlpha = 1; // always 1 during zoom (black handles hiding)
+    G.save();
+    G.translate(C,C);
+    G.scale(scale,scale);
+    G.translate(-C,-C);
+    fullLogo(1);
+    G.restore();
+  } else {
+    // ── DOTS ──
+    DOTS.forEach((d,i)=>{
+      const ap=pr(t,TS.dotStart+i*TS.dotStagger,TS.dotDur);
+      if(ap<=0)return;
+      const ea=Math.min(1,easeBack(ap));
+      drawDot(d.x,d.y,DR*Math.min(1,ap*2),ea);
+
+      // Label — only while text phase active
+      if(t<TS.textFadeStart+TS.textFadeDur){
+        const ta=Math.min(ea, 1-ease3(pr(t,TS.textFadeStart,TS.textFadeDur)));
+        drawLabel(d,ta);
+      }
+    });
+
+    // ── RAYS ──
+    RAY_ORDER.forEach((ri,order)=>{
+      const rp=ease3(pr(t,TS.rayStart+order*TS.rayStagger,TS.rayDur));
+      if(rp<=0)return;
+      drawRay(RAYS[ri],rp,1);
+    });
+  }
+
+  // ── FADE TO BLACK ──
+  if(t>=TS.blackStart){
+    const bp=ease3(pr(t,TS.blackStart,TS.blackDur));
+    G.save();
+    G.globalAlpha=bp;
+    G.fillStyle='#000';
+    G.fillRect(0,0,W,H);
+    G.restore();
+  }
+
+  if(t<TS.end) raf=requestAnimationFrame(frame);
+  else{G.fillStyle='#000';G.fillRect(0,0,W,H);}
+}
+
+function play(){
+  if(raf)cancelAnimationFrame(raf);
+  G.fillStyle='#000';G.fillRect(0,0,W,H);
+  t0=performance.now();
+  raf=requestAnimationFrame(frame);
+}
+
+setTimeout(play,200);
+</script>
