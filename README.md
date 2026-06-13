@@ -1,6 +1,6 @@
-# Vary: Science Lab website with SDF scene and dot-matrix shader
+# SholoTech
 
-Created with [Omma](https://omma.build)
+SholoTech's official website — a startup building custom web, mobile, AI, and cloud products for clients, alongside our own in-house software.
 
 ## Setup
 
@@ -14,4 +14,3 @@ npm run dev
 ```bash
 npm run build
 ```
-# SholoTech
