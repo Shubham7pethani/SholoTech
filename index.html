@@ -1903,7 +1903,8 @@
   let Cx=W/2, Cy=H/2;
 
   const PURPLE='#7016EF';
-  let LR=Math.min(W,H)*0.34;
+  // smaller radius on narrow screens so the orbiting labels don't get cut off
+  let LR=Math.min(W,H)*(W<600?0.2:0.34);
   let SW=LR*(18/170);
   let DR=LR*(9/170);
   let FONT=Math.round(LR*(16/170));
@@ -1927,7 +1928,7 @@
       const y=Cy+Math.sin(r2d(d.a))*dist;
       const nx=Math.cos(r2d(d.a));
       const ny=Math.sin(r2d(d.a));
-      const OFF=LR*(36/170);
+      const OFF=LR*(W<600?12/170:36/170);
       let tx=x+nx*OFF;
       let ty=y+ny*OFF;
       let align='center';
