@@ -17,6 +17,11 @@
     body { overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
     body::-webkit-scrollbar { display: none; }
 
+    /* Lenis smooth scroll (classes are applied to <body>, the scroll root) */
+    body.lenis-smooth { scroll-behavior: auto !important; }
+    body.lenis-stopped { overflow: hidden; }
+    .lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+
     /* ===== INTRO LOADER ===== */
     #intro-loader {
       position: fixed;
@@ -69,6 +74,25 @@
       width: 100%;
       height: 100vh;
       overflow: hidden;
+    }
+
+    /* ===== FLOATING LOGOS (free-gravity drift) ===== */
+    .hero-logos {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .hero-logo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 88px;
+      height: auto;
+      opacity: 0.6;
+      will-change: transform;
+      filter: drop-shadow(0 0 18px rgba(112,22,239,0.45));
     }
 
     /* ===== HERO OVERLAY ===== */
@@ -680,7 +704,7 @@
       }
       .ticker-track {
         gap: 20px;
-        animation-duration: 20s;
+        animation-duration: 90s;
       }
       .ticker-item {
         font-size: 10px;
@@ -917,15 +941,20 @@
       z-index: 1;
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 22px 48px;
     }
     .whatwedo-tags span {
+      display: flex;
+      align-items: center;
+      gap: 9px;
       font-size: 13px;
       font-weight: 400;
       color: rgba(255,255,255,0.55);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 100px;
-      padding: 9px 18px;
+    }
+    .whatwedo-tag-icon {
+      width: 14px;
+      height: 14px;
+      object-fit: contain;
     }
 
     /* Features bento section (React) */
@@ -963,8 +992,12 @@
     /* Dot grid showcase section */
     .section-dotgrid {
       position: relative;
-      padding: 140px 48px;
+      padding: 100px 48px;
       overflow: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     .dotgrid-canvas {
       position: absolute;
@@ -983,48 +1016,263 @@
     .section-dotgrid .section-heading {
       max-width: 100%;
       text-align: center;
-      margin: 0 auto 64px;
+      margin: 0 auto 24px;
     }
     .dotgrid-cards {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 28px;
-      max-width: 920px;
+      gap: 40px;
+      max-width: 1080px;
       margin: 0 auto;
     }
     .dotgrid-card {
       position: relative;
-      padding: 48px 32px;
+      padding: 32px;
       text-align: center;
-      transition: transform 0.4s ease;
+      transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
     }
     .dotgrid-card:hover {
-      transform: translateY(-4px);
+      transform: translateY(-6px);
     }
     .dotgrid-badge {
       display: inline-flex;
-      padding: 6px 16px;
-      border: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 18px;
+      border: 1px solid rgba(255,255,255,0.12);
       border-radius: 100px;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 400;
       letter-spacing: 0.5px;
-      color: rgba(255,255,255,0.5);
-      margin-bottom: 24px;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 28px;
     }
     .dotgrid-card h3 {
       font-family: 'Instrument Serif', Georgia, serif;
       font-weight: 400;
-      font-size: 32px;
+      font-size: clamp(38px, 4vw, 52px);
       color: #fff;
       letter-spacing: -0.5px;
-      margin-bottom: 8px;
+      margin-bottom: 14px;
     }
     .dotgrid-sub {
+      font-size: 16px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 32px;
+    }
+
+    /* ===== FEATURED PROJECTS (scroll-stacking cards) ===== */
+    .section-projects {
+      position: relative;
+      padding: 140px 48px;
+    }
+    .section-projects .section-label,
+    .section-projects .section-heading { text-align: center; }
+    .section-projects .section-heading { max-width: 100%; margin: 0 auto 20px; }
+    .projects-sub {
+      max-width: 560px;
+      margin: 0 auto 80px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.4);
+    }
+    .fp-stack {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .fp-card {
+      position: sticky;
+      top: 88px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 48px;
+      align-items: stretch;
+      min-height: calc(100vh - 120px);
+      padding: 28px;
+      border-radius: 26px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: #0a0a0d;
+      box-shadow: 0 -8px 30px -16px rgba(0,0,0,0.9), 0 50px 100px -60px rgba(0,0,0,1);
+      overflow: hidden;
+    }
+    .fp-card[data-href] { cursor: pointer; }
+
+    /* media / image side — no box, image floats on the card */
+    .fp-media {
+      position: relative;
+      height: 100%;
+      min-height: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 18px;
+      overflow: hidden; /* clip the enlarged image so it can't spill onto the text */
+    }
+    /* placeholder (cards without an image yet) still shows a subtle drop area */
+    .fp-media:not(:has(img)) {
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: #111116;
+    }
+    .fp-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 24px 44px 24px 12px;
+    }
+    .fp-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    /* phone-mockup screenshots: show the whole thing, don't crop — bigger, no padding */
+    .fp-media img.fp-img-contain {
+      object-fit: contain;
+      padding: 0;
+      transform: scale(1.12);
+    }
+    /* this app image has lots of built-in whitespace — scale it up more */
+    .fp-media img.fp-img-lg {
+      transform: scale(1.45);
+    }
+    .fp-media-hint {
+      text-align: center;
+      color: rgba(255,255,255,0.35);
+      font-size: 13px;
+      font-weight: 300;
+      padding: 24px;
+    }
+    .fp-media-hint span {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 8px;
+    }
+
+    /* info side */
+    .fp-index {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 18px;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 1px;
+    }
+    .fp-title {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(30px, 3.4vw, 46px);
+      line-height: 1.08;
+      color: #fff;
+      letter-spacing: -0.5px;
+      margin: 14px 0 32px;
+    }
+    .fp-title .fp-accent { color: #fff; }
+    .fp-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 26px 32px;
+    }
+    .fp-meta-label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 7px;
+    }
+    .fp-meta-val {
       font-size: 14px;
       font-weight: 300;
-      color: rgba(255,255,255,0.4);
-      margin-bottom: 28px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.8);
+    }
+    .fp-meta-val a { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.35); }
+    .fp-meta-val a:hover { border-bottom-color: rgba(255,255,255,0.8); }
+    .fp-meta-val.muted { color: rgba(255,255,255,0.4); }
+
+    /* Google Play download button (official colorful badge) */
+    .fp-store-wrap {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .fp-store-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 28px 12px 22px;
+      border-radius: 14px;
+      /* brand purple */
+      background: linear-gradient(135deg, #7016EF, #9B6DFF);
+      background-size: 140% 140%;
+      background-position: 0% 50%;
+      color: #fff;
+      text-decoration: none;
+      box-shadow: 0 10px 28px -12px rgba(112,22,239,0.6);
+      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s ease, background-position 0.6s ease;
+    }
+    .fp-store-btn:hover {
+      transform: translateY(-3px);
+      background-position: 100% 50%;
+      box-shadow: 0 22px 48px -14px rgba(112,22,239,0.8);
+    }
+    .fp-store-btn:active { transform: translateY(-1px); }
+    .fp-store-btn .fp-store-ico {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .fp-store-btn .fp-store-ico svg { width: 26px; height: 26px; display: block; }
+    .fp-store-btn .fp-store-txt { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
+    .fp-store-btn .fp-store-sub { font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255,255,255,0.85); }
+    .fp-store-btn .fp-store-main { font-size: 17px; font-weight: 700; letter-spacing: 0.2px; }
+    .fp-store-cap { font-size: 12px; color: rgba(255,255,255,0.4); padding-left: 4px; }
+    .fp-store-cap b { color: rgba(255,255,255,0.7); font-weight: 500; }
+
+    /* upcoming app — same look but muted & non-clickable */
+    .fp-store-btn--soon {
+      background: linear-gradient(135deg, #4a2a8c, #5e4a91);
+      box-shadow: none;
+      cursor: default;
+      opacity: 0.9;
+    }
+    .fp-store-btn--soon:hover {
+      transform: none;
+      background-position: 0% 50%;
+      box-shadow: none;
+    }
+
+    @media (max-width: 900px) {
+      .section-projects { padding: 90px 24px; }
+      .fp-card {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        padding: 20px;
+        min-height: 0;
+        position: relative;
+        top: auto !important;
+      }
+      .fp-media { min-height: 300px; height: auto; }
+      /* never zoom/crop the screenshots on mobile — show them whole */
+      .fp-media img.fp-img-contain,
+      .fp-media img.fp-img-lg { transform: none !important; }
+      .fp-info { padding: 4px 4px 8px; }
+      .fp-title { font-size: clamp(26px, 7vw, 36px); margin: 10px 0 22px; }
+      .fp-meta { grid-template-columns: 1fr 1fr; gap: 18px; }
+    }
+    @media (max-width: 480px) {
+      .fp-meta { grid-template-columns: 1fr; }
+      .fp-store-btn { padding: 11px 20px; }
     }
 
     /* Research section */
@@ -1130,29 +1378,55 @@
       margin-top: 80px;
     }
     .number-card {
+      position: relative;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 14px;
     }
     .number-val {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
       font-family: 'Instrument Serif', Georgia, serif;
-      font-size: clamp(48px, 6vw, 80px);
+      font-size: clamp(56px, 7vw, 96px);
       font-weight: 400;
-      color: #fff;
       letter-spacing: -2px;
       line-height: 1;
+      color: #fff;
     }
+    /* odometer digit window: clips the rolling reel */
+    .odo-digit {
+      display: inline-block;
+      height: 1em;
+      overflow: hidden;
+      vertical-align: top;
+    }
+    .odo-reel {
+      display: flex;
+      flex-direction: column;
+      transform: translateY(0);
+      will-change: transform;
+    }
+    /* reel only rolls once the section is in view */
+    .number-val.rolled .odo-reel {
+      transition: transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .odo-reel > span {
+      display: block;
+      height: 1em;
+      line-height: 1;
+      text-align: center;
+    }
+    .odo-suffix {
+      display: inline-block;
+      color: #9B6DFF;
+    }
+    .number-divider { display: none; }
     .number-label {
       font-size: 13px;
       font-weight: 300;
-      color: rgba(255,255,255,0.35);
+      color: rgba(255,255,255,0.4);
       line-height: 1.5;
-    }
-    .number-divider {
-      width: 32px;
-      height: 1px;
-      background: rgba(255,255,255,0.1);
-      margin: 8px 0;
     }
 
     /* What We Build / Floating Icons section */
@@ -1169,8 +1443,9 @@
       text-align: center;
     }
     .section-analytics .section-heading {
-      max-width: 760px;
+      max-width: 860px;
       margin: 0 auto 20px;
+      font-size: clamp(40px, 6.2vw, 84px);
     }
     .products-sub {
       font-size: 14px;
@@ -1178,7 +1453,30 @@
       color: rgba(255,255,255,0.35);
       line-height: 1.8;
       max-width: 520px;
-      margin: 0 auto 36px;
+      margin: 0 auto 28px;
+    }
+    .products-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0.2px;
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      transition: color 0.3s ease, gap 0.3s ease;
+    }
+    .products-link svg {
+      width: 15px;
+      height: 15px;
+      transition: transform 0.3s ease;
+    }
+    .products-link:hover {
+      color: #A78BFA;
+      gap: 12px;
+    }
+    .products-link:hover svg {
+      transform: translateX(3px);
     }
     .floaticons-stage {
       position: relative;
@@ -1387,6 +1685,8 @@
       .nav-hamburger { display: flex; }
       .mobile-menu { display: flex; }
       .hero-content { padding: 0 24px 32px; }
+      /* lift text up but keep the buttons down at the bottom */
+      .hero-actions { margin-top: 56px; }
       .hero-h1 { font-size: clamp(44px, 13vw, 72px); letter-spacing: -1px; margin-bottom: 24px; }
       .hero-row { flex-direction: column; align-items: flex-start; gap: 20px; }
       .hero-sub { font-size: 12px; max-width: 100%; }
@@ -1395,6 +1695,7 @@
       .hero-stat-val { font-size: 14px; }
       .hero-stat-label { font-size: 9px; }
       .hero-scroll { display: none; }
+      .hero-logos { display: none; } /* floating logo crowds the small hero */
       .btn-primary, .btn-secondary { font-size: 12px; padding: 11px 22px; }
 
       .section-whatwedo { padding: 100px 24px 80px; }
@@ -1402,9 +1703,10 @@
       .section-feat8 { padding: 0 24px 100px; }
       .section-particles { padding: 0 24px 100px; }
       .particle-canvas-wrap { margin: 0 -24px; }
-      .section-dotgrid { padding: 100px 24px; }
+      .section-dotgrid { padding: 90px 24px; min-height: auto; }
       .dotgrid-cards { grid-template-columns: 1fr; gap: 20px; }
       .dotgrid-card { padding: 36px 24px; }
+      .dotgrid-card h3 { font-size: clamp(30px, 9vw, 40px); }
       .section-research { padding: 100px 24px 0; }
       .research-list { flex-direction: column; gap: 32px; }
       .research-canvas-wrap { height: 280px; }
@@ -1987,6 +2289,11 @@
 <!-- TOP FADE (below navbar) -->
 <div class="hero-fade-top"></div>
 
+<!-- FLOATING LOGO (single, free-floating around the hero) -->
+<div class="hero-logos" aria-hidden="true">
+  <img src="logowithoutbackground.png" id="hero-float-logo" class="hero-logo" alt="">
+</div>
+
 <!-- BATTLE OVERLAY (purple flash on mascot hits) -->
 <div id="battle-overlay"></div>
 
@@ -2001,15 +2308,15 @@
     </h1>
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-val number-val" data-count="15" data-suffix="+">0</div>
+        <div class="hero-stat-val" data-count="15" data-suffix="+">0</div>
         <div class="hero-stat-label">Projects Delivered</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-val number-val" data-count="100" data-suffix="%">0</div>
+        <div class="hero-stat-val" data-count="100" data-suffix="%">0</div>
         <div class="hero-stat-label">Client Satisfaction</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-val number-val" data-count="5" data-suffix="+">0</div>
+        <div class="hero-stat-val" data-count="5" data-suffix="+">0</div>
         <div class="hero-stat-label">Engineers &amp; Designers</div>
       </div>
     </div>
@@ -2997,12 +3304,16 @@
     framedDots = [];
   }
 
+  // (The { } bracket-formation on card hover was removed — it looked messy.
+  //  The ambient dot field + cursor repel below is kept as the background.)
+
+  // cursor-following spotlight inside each card
   cards.forEach((card) => {
-    card.addEventListener('mouseenter', () => {
-      clearFrameTargets();
-      assignFrameTargets(card);
+    card.addEventListener('mousemove', (e) => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+      card.style.setProperty('--my', (e.clientY - r.top) + 'px');
     });
-    card.addEventListener('mouseleave', clearFrameTargets);
   });
 
   function frame() {
@@ -3089,7 +3400,7 @@
           One team, every skill <span class="thin">your product needs</span>
         </h2>
         <p class="products-sub reveal reveal-delay-3">From web platforms to mobile apps, AI features to cloud infrastructure — we design, build, and ship it all in-house, end to end.</p>
-        <a href="#" class="btn-primary reveal reveal-delay-4">Start a Project <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        <a href="#services" class="products-link reveal reveal-delay-3">Explore our services <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
       </div>
     </div>
   </div>
@@ -3114,7 +3425,7 @@
             <div class="whatwedo-tag">01 — Web Development</div>
             <h3 class="whatwedo-detail-heading">Responsive.<br>Scalable.<br>Built to last.</h3>
             <p class="whatwedo-detail-desc">Highly responsive, secure modern web applications tailored to your business needs — built with state-of-the-art architectures and frameworks that handle real traffic from day one.</p>
-            <div class="whatwedo-tags"><span>React</span><span>Next.js</span><span>Node.js</span><span>PostgreSQL</span><span>GraphQL</span></div>
+            <div class="whatwedo-tags"><span><img src="https://cdn.simpleicons.org/react" class="whatwedo-tag-icon" alt="">React</span><span><img src="https://cdn.simpleicons.org/nextdotjs/fff" class="whatwedo-tag-icon" alt="">Next.js</span><span><img src="https://cdn.simpleicons.org/nodedotjs" class="whatwedo-tag-icon" alt="">Node.js</span><span><img src="https://cdn.simpleicons.org/postgresql" class="whatwedo-tag-icon" alt="">PostgreSQL</span><span><img src="https://cdn.simpleicons.org/graphql" class="whatwedo-tag-icon" alt="">GraphQL</span></div>
           </div>
         </div>
         <div class="whatwedo-item">
@@ -3125,7 +3436,7 @@
             <div class="whatwedo-tag">02 — Mobile Applications</div>
             <h3 class="whatwedo-detail-heading">Native.<br>Fluid.<br>Cross-platform.</h3>
             <p class="whatwedo-detail-desc">Native and cross-platform mobile apps for iOS and Android, engineered for seamless performance and intuitive experiences your users will love.</p>
-            <div class="whatwedo-tags"><span>Swift</span><span>Kotlin</span><span>React Native</span><span>Firebase</span><span>GraphQL</span></div>
+            <div class="whatwedo-tags"><span><img src="https://cdn.simpleicons.org/swift" class="whatwedo-tag-icon" alt="">Swift</span><span><img src="https://cdn.simpleicons.org/kotlin" class="whatwedo-tag-icon" alt="">Kotlin</span><span><img src="https://cdn.simpleicons.org/react" class="whatwedo-tag-icon" alt="">React Native</span><span><img src="https://cdn.simpleicons.org/firebase" class="whatwedo-tag-icon" alt="">Firebase</span><span><img src="https://cdn.simpleicons.org/graphql" class="whatwedo-tag-icon" alt="">GraphQL</span></div>
           </div>
         </div>
         <div class="whatwedo-item">
@@ -3136,7 +3447,7 @@
             <div class="whatwedo-tag">03 — AI Integration</div>
             <h3 class="whatwedo-detail-heading">Smart.<br>Adaptive.<br>Automated.</h3>
             <p class="whatwedo-detail-desc">Cutting-edge LLMs, predictive models, and intelligent automation woven into your existing products to supercharge workflows and decision-making.</p>
-            <div class="whatwedo-tags"><span>OpenAI</span><span>LangChain</span><span>Python</span><span>Vector DB</span><span>FastAPI</span></div>
+            <div class="whatwedo-tags"><span><svg viewBox="0 0 24 24" class="whatwedo-tag-icon" fill="#fff"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>OpenAI</span><span><img src="https://cdn.simpleicons.org/langchain" class="whatwedo-tag-icon" alt="">LangChain</span><span><img src="https://cdn.simpleicons.org/python" class="whatwedo-tag-icon" alt="">Python</span><span><svg viewBox="0 0 24 24" class="whatwedo-tag-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>Vector DB</span><span><img src="https://cdn.simpleicons.org/fastapi" class="whatwedo-tag-icon" alt="">FastAPI</span></div>
           </div>
         </div>
         <div class="whatwedo-item">
@@ -3147,7 +3458,7 @@
             <div class="whatwedo-tag">04 — Cloud Infrastructure</div>
             <h3 class="whatwedo-detail-heading">Resilient.<br>Elastic.<br>Always on.</h3>
             <p class="whatwedo-detail-desc">Auto-scaling cloud architectures with high availability, modern encryption, and zero-downtime continuous integration — built to handle growth.</p>
-            <div class="whatwedo-tags"><span>AWS</span><span>Docker</span><span>Kubernetes</span><span>Terraform</span><span>CI/CD</span></div>
+            <div class="whatwedo-tags"><span><svg viewBox="0 0 24 24" class="whatwedo-tag-icon" fill="#FF9900"><path d="M6.763 10.036c0 .296.032.535.088.71.064.176.144.368.256.576.04.063.056.127.056.183 0 .08-.048.16-.152.24l-.503.335a.383.383 0 0 1-.208.072c-.08 0-.16-.04-.239-.112a2.47 2.47 0 0 1-.287-.375 6.18 6.18 0 0 1-.248-.471c-.622.734-1.405 1.101-2.347 1.101-.67 0-1.205-.191-1.596-.574-.391-.384-.59-.894-.59-1.533 0-.678.239-1.23.726-1.644.487-.415 1.133-.623 1.955-.623.272 0 .551.024.846.064.296.04.6.104.918.176v-.583c0-.607-.127-1.03-.375-1.277-.255-.248-.686-.367-1.3-.367-.28 0-.568.031-.863.103-.295.072-.583.16-.862.272a2.287 2.287 0 0 1-.28.104.488.488 0 0 1-.127.023c-.112 0-.168-.08-.168-.247v-.391c0-.128.016-.224.056-.28a.597.597 0 0 1 .224-.167c.279-.144.614-.264 1.005-.36a4.84 4.84 0 0 1 1.246-.151c.95 0 1.644.216 2.091.647.439.43.662 1.085.662 1.963v2.586zm-3.24 1.214c.263 0 .534-.048.822-.144.287-.096.543-.271.758-.51.128-.152.224-.32.272-.512.047-.191.08-.423.08-.694v-.335a6.66 6.66 0 0 0-.735-.136 6.02 6.02 0 0 0-.75-.048c-.535 0-.926.104-1.19.32-.263.215-.39.518-.39.917 0 .375.095.655.295.846.191.2.47.296.838.296zm6.41.862c-.144 0-.24-.024-.304-.08-.064-.048-.12-.16-.168-.311L7.586 5.55a1.398 1.398 0 0 1-.072-.32c0-.128.064-.2.191-.2h.783c.151 0 .255.025.31.08.065.048.113.16.16.312l1.342 5.284 1.245-5.284c.04-.16.088-.264.151-.312a.549.549 0 0 1 .32-.08h.638c.152 0 .256.025.32.08.063.048.12.16.151.312l1.261 5.348 1.381-5.348c.048-.16.104-.264.16-.312a.52.52 0 0 1 .311-.08h.743c.127 0 .2.065.2.2 0 .04-.009.08-.017.128a1.137 1.137 0 0 1-.056.2l-1.923 6.17c-.048.16-.104.263-.168.311a.51.51 0 0 1-.303.08h-.687c-.151 0-.255-.024-.32-.08-.063-.056-.119-.16-.15-.32l-1.238-5.148-1.23 5.14c-.04.16-.087.264-.15.32-.065.056-.177.08-.32.08zm10.256.215c-.415 0-.83-.048-1.229-.143-.399-.096-.71-.2-.918-.32-.128-.071-.215-.151-.247-.223a.563.563 0 0 1-.048-.224v-.407c0-.167.064-.247.183-.247.048 0 .096.008.144.024.048.016.12.048.2.08.271.12.566.215.878.279.319.064.63.096.95.096.502 0 .894-.088 1.165-.264a.86.86 0 0 0 .415-.758.777.777 0 0 0-.215-.559c-.144-.151-.416-.287-.807-.415l-1.157-.36c-.583-.183-1.014-.454-1.277-.813a1.902 1.902 0 0 1-.4-1.158c0-.335.073-.63.216-.886.144-.255.335-.479.575-.654.24-.184.51-.32.83-.415.32-.096.655-.136 1.006-.136.175 0 .359.008.535.032.183.024.35.056.518.088.16.04.312.08.455.127.144.048.256.096.336.144a.69.69 0 0 1 .24.2.43.43 0 0 1 .071.263v.375c0 .168-.064.256-.184.256a.83.83 0 0 1-.303-.096 3.652 3.652 0 0 0-1.532-.311c-.455 0-.815.071-1.062.223-.248.152-.375.383-.375.71 0 .224.08.416.24.567.159.152.454.304.877.44l1.134.358c.574.184.99.44 1.237.767.247.327.367.702.367 1.117 0 .343-.072.655-.207.926-.144.272-.336.511-.583.703-.248.2-.543.343-.886.447-.36.111-.734.167-1.142.167zM21.698 16.207c-2.626 1.94-6.442 2.969-9.722 2.969-4.598 0-8.74-1.7-11.87-4.526-.247-.223-.024-.527.272-.351 3.384 1.963 7.559 3.153 11.877 3.153 2.914 0 6.114-.607 9.06-1.852.439-.2.814.287.383.607zM22.792 14.961c-.336-.43-2.22-.207-3.074-.103-.255.032-.295-.192-.063-.36 1.5-1.053 3.967-.75 4.254-.399.287.36-.08 2.826-1.485 4.007-.215.184-.423.088-.327-.151.32-.79 1.03-2.57.695-2.994z"/></svg>AWS</span><span><img src="https://cdn.simpleicons.org/docker" class="whatwedo-tag-icon" alt="">Docker</span><span><img src="https://cdn.simpleicons.org/kubernetes" class="whatwedo-tag-icon" alt="">Kubernetes</span><span><img src="https://cdn.simpleicons.org/terraform" class="whatwedo-tag-icon" alt="">Terraform</span><span><img src="https://cdn.simpleicons.org/githubactions" class="whatwedo-tag-icon" alt="">CI/CD</span></div>
           </div>
         </div>
         <div class="whatwedo-item">
@@ -3158,7 +3469,7 @@
             <div class="whatwedo-tag">05 — SaaS Platforms</div>
             <h3 class="whatwedo-detail-heading">Multi-tenant.<br>Secure.<br>Production-ready.</h3>
             <p class="whatwedo-detail-desc">Scalable multi-tenant SaaS applications with subscription billing, secure APIs, and custom analytics dashboards built in from day one.</p>
-            <div class="whatwedo-tags"><span>Stripe</span><span>PostgreSQL</span><span>Redis</span><span>Node.js</span><span>REST APIs</span></div>
+            <div class="whatwedo-tags"><span><img src="https://cdn.simpleicons.org/stripe" class="whatwedo-tag-icon" alt="">Stripe</span><span><img src="https://cdn.simpleicons.org/postgresql" class="whatwedo-tag-icon" alt="">PostgreSQL</span><span><img src="https://cdn.simpleicons.org/redis" class="whatwedo-tag-icon" alt="">Redis</span><span><img src="https://cdn.simpleicons.org/nodedotjs" class="whatwedo-tag-icon" alt="">Node.js</span><span><svg viewBox="0 0 24 24" class="whatwedo-tag-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>REST APIs</span></div>
           </div>
         </div>
         <div class="whatwedo-item">
@@ -3169,7 +3480,7 @@
             <div class="whatwedo-tag">06 — UI/UX Design</div>
             <h3 class="whatwedo-detail-heading">Clean.<br>Intuitive.<br>On-brand.</h3>
             <p class="whatwedo-detail-desc">Premium, human-centered interfaces that establish your brand identity, delight users, and convert visitors into customers.</p>
-            <div class="whatwedo-tags"><span>Figma</span><span>Design Systems</span><span>Prototyping</span><span>User Research</span><span>Motion</span></div>
+            <div class="whatwedo-tags"><span><img src="https://cdn.simpleicons.org/figma" class="whatwedo-tag-icon" alt="">Figma</span><span><svg viewBox="0 0 24 24" class="whatwedo-tag-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>Design Systems</span><span><svg viewBox="0 0 24 24" class="whatwedo-tag-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19 7-7 3 3-7 7-3-3z"/><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>Prototyping</span><span><svg viewBox="0 0 24 24" class="whatwedo-tag-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>User Research</span><span><img src="https://cdn.simpleicons.org/framer" class="whatwedo-tag-icon" alt="">Motion</span></div>
           </div>
         </div>
       </div>
@@ -3181,12 +3492,142 @@
   </div>
 </section>
 
-<!-- ===== FEATURES BENTO (React) ===== -->
-<section class="section section-feat8">
+<!-- ===== FEATURED PROJECTS (scroll-stacking) ===== -->
+<section class="section section-projects">
   <div class="section-inner">
-    <div class="section-label reveal">Why SholoTech</div>
-    <h2 class="section-heading reveal reveal-delay-1">Built different, <span class="thin">built to last</span></h2>
-    <div id="features8-root"></div>
+    <div class="section-label reveal">Featured Projects</div>
+    <h2 class="section-heading reveal reveal-delay-1">Ideas, shipped <span class="thin">into the real world</span></h2>
+    <p class="projects-sub reveal reveal-delay-2">A look at how we turn ideas into real, high-impact products people actually use.</p>
+
+    <div class="fp-stack">
+      <!-- ===== Project 1: Image to File Converter ===== -->
+      <article class="fp-card reveal reveal-delay-1" data-href="https://play.google.com/store/apps/details?id=com.sholo.imageconverter">
+        <div class="fp-media">
+          <img src="imagetofileconverterapp.png" alt="Image to File Converter app screens" class="fp-img-contain">
+        </div>
+        <div class="fp-info">
+          <div class="fp-index">01</div>
+          <h3 class="fp-title"><span class="fp-accent">Image to File Converter</span> — turn any image into a file in a tap</h3>
+          <div class="fp-meta">
+            <div>
+              <span class="fp-meta-label">Client</span>
+              <span class="fp-meta-val">SholoTech (In-house Product)</span>
+            </div>
+            <div>
+              <span class="fp-meta-label">Industry</span>
+              <span class="fp-meta-val">Productivity / Utilities</span>
+            </div>
+            <div style="grid-column:1 / -1;">
+              <span class="fp-meta-label">Deliverables</span>
+              <span class="fp-meta-val">UI/UX Design, Android App Development, Image-to-PDF Engine, Smart Compression &amp; Multi-page Export</span>
+            </div>
+          </div>
+          <div class="fp-store-wrap">
+            <a class="fp-store-btn" href="https://play.google.com/store/apps/details?id=com.sholo.imageconverter" target="_blank" rel="noopener">
+              <span class="fp-store-ico"><svg viewBox="30 336.7 120.9 129.2" xmlns="http://www.w3.org/2000/svg"><path fill="#FFD400" d="M119.2,421.2c15.3-8.4,27-14.8,28-15.3c3.2-1.7,6.5-6.2,0-9.7c-2.1-1.1-13.4-7.3-28-15.3l-20.1,20.2L119.2,421.2z"/><path fill="#FF3333" d="M99.1,401.1l-64.2,64.7c1.5,0.2,3.2-0.2,5.2-1.3c4.2-2.3,48.8-26.7,79.1-43.3L99.1,401.1L99.1,401.1z"/><path fill="#48FF48" d="M99.1,401.1l20.1-20.2c0,0-74.6-40.7-79.1-43.1c-1.7-1-3.6-1.3-5.3-1L99.1,401.1z"/><path fill="#3BCCFF" d="M99.1,401.1l-64.3-64.3c-2.6,0.6-4.8,2.9-4.8,7.6c0,7.5,0,107.5,0,113.8c0,4.3,1.7,7.4,4.9,7.7L99.1,401.1z"/></svg></span>
+              <span class="fp-store-txt"><span class="fp-store-sub">Get it on</span><span class="fp-store-main">Google Play</span></span>
+            </a>
+            <span class="fp-store-cap"><b>Free download</b> · Available now on Android</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- ===== Project 2: SnapStatus (Status Saver) ===== -->
+      <article class="fp-card reveal reveal-delay-1" data-href="https://play.google.com/store/apps/details?id=com.snapstatus.snapstatus2026">
+        <div class="fp-media">
+          <img src="statussaverapp.png" alt="SnapStatus status saver app screens" class="fp-img-contain fp-img-lg">
+        </div>
+        <div class="fp-info">
+          <div class="fp-index">02</div>
+          <h3 class="fp-title"><span class="fp-accent">Status Saver</span> — Save &amp; Repost</h3>
+          <div class="fp-meta">
+            <div>
+              <span class="fp-meta-label">Client</span>
+              <span class="fp-meta-val">SholoTech (In-house Product)</span>
+            </div>
+            <div>
+              <span class="fp-meta-label">Industry</span>
+              <span class="fp-meta-val">Social / Utilities</span>
+            </div>
+            <div style="grid-column:1 / -1;">
+              <span class="fp-meta-label">Deliverables</span>
+              <span class="fp-meta-val">UI/UX Design, Android App Development, Photo &amp; Video Status Saver, One-tap Download &amp; Gallery</span>
+            </div>
+          </div>
+          <div class="fp-store-wrap">
+            <a class="fp-store-btn" href="https://play.google.com/store/apps/details?id=com.snapstatus.snapstatus2026" target="_blank" rel="noopener">
+              <span class="fp-store-ico"><svg viewBox="30 336.7 120.9 129.2" xmlns="http://www.w3.org/2000/svg"><path fill="#FFD400" d="M119.2,421.2c15.3-8.4,27-14.8,28-15.3c3.2-1.7,6.5-6.2,0-9.7c-2.1-1.1-13.4-7.3-28-15.3l-20.1,20.2L119.2,421.2z"/><path fill="#FF3333" d="M99.1,401.1l-64.2,64.7c1.5,0.2,3.2-0.2,5.2-1.3c4.2-2.3,48.8-26.7,79.1-43.3L99.1,401.1L99.1,401.1z"/><path fill="#48FF48" d="M99.1,401.1l20.1-20.2c0,0-74.6-40.7-79.1-43.1c-1.7-1-3.6-1.3-5.3-1L99.1,401.1z"/><path fill="#3BCCFF" d="M99.1,401.1l-64.3-64.3c-2.6,0.6-4.8,2.9-4.8,7.6c0,7.5,0,107.5,0,113.8c0,4.3,1.7,7.4,4.9,7.7L99.1,401.1z"/></svg></span>
+              <span class="fp-store-txt"><span class="fp-store-sub">Get it on</span><span class="fp-store-main">Google Play</span></span>
+            </a>
+            <span class="fp-store-cap"><b>Free download</b> · Available now on Android</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- ===== Project 3: Duplicate Photo - File Remover ===== -->
+      <article class="fp-card reveal reveal-delay-1">
+        <div class="fp-media">
+          <img src="duplicatephotofileremoverapp.png" alt="Duplicate Photo - File Remover app screens" class="fp-img-contain fp-img-lg">
+        </div>
+        <div class="fp-info">
+          <div class="fp-index">03</div>
+          <h3 class="fp-title"><span class="fp-accent">Duplicate Photo</span> — File Remover</h3>
+          <div class="fp-meta">
+            <div>
+              <span class="fp-meta-label">Client</span>
+              <span class="fp-meta-val">SholoTech (In-house Product)</span>
+            </div>
+            <div>
+              <span class="fp-meta-label">Industry</span>
+              <span class="fp-meta-val">Productivity / Utilities</span>
+            </div>
+            <div style="grid-column:1 / -1;">
+              <span class="fp-meta-label">Deliverables</span>
+              <span class="fp-meta-val">UI/UX Design, Android App Development, Smart Duplicate Detection, Bulk Cleanup &amp; Storage Optimization</span>
+            </div>
+          </div>
+          <div class="fp-store-wrap">
+            <span class="fp-store-btn fp-store-btn--soon">
+              <span class="fp-store-ico"><svg viewBox="30 336.7 120.9 129.2" xmlns="http://www.w3.org/2000/svg"><path fill="#FFD400" d="M119.2,421.2c15.3-8.4,27-14.8,28-15.3c3.2-1.7,6.5-6.2,0-9.7c-2.1-1.1-13.4-7.3-28-15.3l-20.1,20.2L119.2,421.2z"/><path fill="#FF3333" d="M99.1,401.1l-64.2,64.7c1.5,0.2,3.2-0.2,5.2-1.3c4.2-2.3,48.8-26.7,79.1-43.3L99.1,401.1L99.1,401.1z"/><path fill="#48FF48" d="M99.1,401.1l20.1-20.2c0,0-74.6-40.7-79.1-43.1c-1.7-1-3.6-1.3-5.3-1L99.1,401.1z"/><path fill="#3BCCFF" d="M99.1,401.1l-64.3-64.3c-2.6,0.6-4.8,2.9-4.8,7.6c0,7.5,0,107.5,0,113.8c0,4.3,1.7,7.4,4.9,7.7L99.1,401.1z"/></svg></span>
+              <span class="fp-store-txt"><span class="fp-store-sub">Coming soon to</span><span class="fp-store-main">Google Play</span></span>
+            </span>
+            <span class="fp-store-cap"><b>Launching soon</b> · download link coming after release</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- ===== Project 4: AppLock - LockIt Pro (upcoming) ===== -->
+      <article class="fp-card reveal reveal-delay-1">
+        <div class="fp-media">
+          <img src="AppLock-lockitpro.png" alt="AppLock - LockIt Pro app screens" class="fp-img-contain" style="transform:scale(1.28);">
+        </div>
+        <div class="fp-info">
+          <div class="fp-index">04</div>
+          <h3 class="fp-title"><span class="fp-accent">AppLock</span> — LockIt Pro</h3>
+          <div class="fp-meta">
+            <div>
+              <span class="fp-meta-label">Client</span>
+              <span class="fp-meta-val">SholoTech (In-house Product)</span>
+            </div>
+            <div>
+              <span class="fp-meta-label">Industry</span>
+              <span class="fp-meta-val">Security / Privacy</span>
+            </div>
+            <div style="grid-column:1 / -1;">
+              <span class="fp-meta-label">Deliverables</span>
+              <span class="fp-meta-val">UI/UX Design, Android App Development, App &amp; Privacy Lock, Intruder Detection &amp; Secure Vault</span>
+            </div>
+          </div>
+          <div class="fp-store-wrap">
+            <span class="fp-store-btn fp-store-btn--soon">
+              <span class="fp-store-ico"><svg viewBox="30 336.7 120.9 129.2" xmlns="http://www.w3.org/2000/svg"><path fill="#FFD400" d="M119.2,421.2c15.3-8.4,27-14.8,28-15.3c3.2-1.7,6.5-6.2,0-9.7c-2.1-1.1-13.4-7.3-28-15.3l-20.1,20.2L119.2,421.2z"/><path fill="#FF3333" d="M99.1,401.1l-64.2,64.7c1.5,0.2,3.2-0.2,5.2-1.3c4.2-2.3,48.8-26.7,79.1-43.3L99.1,401.1L99.1,401.1z"/><path fill="#48FF48" d="M99.1,401.1l20.1-20.2c0,0-74.6-40.7-79.1-43.1c-1.7-1-3.6-1.3-5.3-1L99.1,401.1z"/><path fill="#3BCCFF" d="M99.1,401.1l-64.3-64.3c-2.6,0.6-4.8,2.9-4.8,7.6c0,7.5,0,107.5,0,113.8c0,4.3,1.7,7.4,4.9,7.7L99.1,401.1z"/></svg></span>
+              <span class="fp-store-txt"><span class="fp-store-sub">Coming soon to</span><span class="fp-store-main">Google Play</span></span>
+            </span>
+            <span class="fp-store-cap"><b>Launching soon</b> · download link coming after release</span>
+          </div>
+        </div>
+      </article>
+    </div>
   </div>
 </section>
 
@@ -3536,12 +3977,102 @@
         <a href="#">Privacy</a>
         <a href="#">Terms</a>
       </div>
-      <div class="footer-right">&copy; 2026 SholoTech. All rights reserved.</div>
     </div>
   </div>
 </footer>
 
+<script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
 <script>
+  // ===== SMOOTH SCROLLING (Lenis) =====
+  // The page scrolls on <body> (not the window), so point Lenis at body as
+  // both wrapper and content. This smooths the wheel/touch scroll while every
+  // existing scroll listener (nav morph, what-we-do pin, reveals) keeps firing
+  // because Lenis still drives the native body.scrollTop.
+  let lenis = null;
+  (function initSmoothScroll() {
+    if (!window.Lenis) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    lenis = new Lenis({
+      wrapper: document.body,
+      content: document.body,
+      // duration + exponential ease-out = the heavy, weighted "antigravity"
+      // glide used by award-winning agency sites (instead of a flat lerp)
+      duration: 1.4,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1.05,
+      syncTouch: true,
+      touchMultiplier: 1.6,
+    });
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    // make in-page anchor links glide instead of jumping
+    document.querySelectorAll('a[href^="#"]').forEach((a) => {
+      const id = a.getAttribute('href');
+      if (!id || id === '#') return;
+      a.addEventListener('click', (e) => {
+        const target = document.querySelector(id);
+        if (!target) return;
+        e.preventDefault();
+        lenis.scrollTo(target, { offset: -80 });
+      });
+    });
+  })();
+
+  // ===== FREE-FLOATING HERO LOGO (zero-gravity drift) =====
+  (function floatHeroLogo() {
+    const logo = document.getElementById('hero-float-logo');
+    const stage = logo && logo.closest('.hero-wrapper');
+    if (!logo || !stage) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let W = 0, H = 0, size = 88;
+    let x = 0, y = 0;
+    let vx = 0.45, vy = 0.32;     // px per frame — slow, weightless drift
+    let angle = 0, va = 0.12;      // gentle continuous rotation
+
+    function measure() {
+      const r = stage.getBoundingClientRect();
+      W = r.width; H = r.height;
+      size = logo.offsetWidth || 88;
+    }
+    measure();
+    window.addEventListener('resize', measure);
+
+    // start somewhere in the upper-right area, random-ish direction
+    x = W * 0.62; y = H * 0.30;
+    const ang = Math.random() * Math.PI * 2;
+    const speed = 0.55;
+    vx = Math.cos(ang) * speed;
+    vy = Math.sin(ang) * speed;
+
+    function tick() {
+      x += vx; y += vy;
+      // bounce softly off the edges so it wanders the whole hero
+      if (x <= 0) { x = 0; vx = Math.abs(vx); }
+      else if (x + size >= W) { x = W - size; vx = -Math.abs(vx); }
+      if (y <= 0) { y = 0; vy = Math.abs(vy); }
+      else if (y + size >= H) { y = H - size; vy = -Math.abs(vy); }
+      angle += va;
+      logo.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${angle.toFixed(1)}deg)`;
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+
+  // ===== WHOLE PROJECT CARD CLICKABLE =====
+  document.querySelectorAll('.fp-card[data-href]').forEach((card) => {
+    card.addEventListener('click', (e) => {
+      // if an actual link/button inside was clicked, let it handle itself
+      if (e.target.closest('a')) return;
+      window.open(card.dataset.href, '_blank', 'noopener');
+    });
+  });
+
   const hamburger = document.getElementById('hamburger');
   const mobileMenu = document.getElementById('mobile-menu');
   hamburger.addEventListener('click', () => {
@@ -3580,8 +4111,59 @@
   }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
   document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 
-  // ===== NUMBER COUNTER =====
+  // ===== NUMBER ODOMETER =====
+  // Build a rolling-digit reel for each stat, then roll each digit up to its
+  // final value (staggered left-to-right) once the section scrolls into view.
+  document.querySelectorAll('.number-card .number-val[data-count]').forEach(el => {
+    const digits = String(parseInt(el.dataset.count)).split('');
+    const suffix = el.dataset.suffix || '';
+    el.textContent = '';
+    el.dataset.reels = '';
+    digits.forEach(d => {
+      const win = document.createElement('span');
+      win.className = 'odo-digit';
+      const reel = document.createElement('span');
+      reel.className = 'odo-reel';
+      // two full cycles so every reel does at least one complete spin
+      for (let i = 0; i < 20; i++) {
+        const s = document.createElement('span');
+        s.textContent = i % 10;
+        reel.appendChild(s);
+      }
+      // land on the second cycle: one full loop (10) + the target digit
+      reel.dataset.target = 10 + parseInt(d);
+      win.appendChild(reel);
+      el.appendChild(win);
+    });
+    if (suffix) {
+      const suf = document.createElement('span');
+      suf.className = 'odo-suffix';
+      suf.textContent = suffix;
+      el.appendChild(suf);
+    }
+  });
+
   const numObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target;
+      const reels = el.querySelectorAll('.odo-reel');
+      el.classList.add('rolled');
+      reels.forEach((reel, i) => {
+        // small extra delay per digit so they cascade into place
+        reel.style.transitionDelay = (i * 0.12) + 's';
+        // force reflow then roll to the target digit (1em per digit row)
+        requestAnimationFrame(() => {
+          reel.style.transform = `translateY(-${reel.dataset.target}em)`;
+        });
+      });
+      numObs.unobserve(el);
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.number-card .number-val[data-count]').forEach(el => numObs.observe(el));
+
+  // ===== HERO STAT COUNTER (simple count-up, unchanged) =====
+  const heroNumObs = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (!e.isIntersecting) return;
       const el = e.target;
@@ -3596,10 +4178,10 @@
         el.textContent = (target >= 1000 ? cur.toLocaleString() : cur) + (p >= 1 ? suffix : '');
         if (p < 1) requestAnimationFrame(tick);
       })(start);
-      numObs.unobserve(el);
+      heroNumObs.unobserve(el);
     });
   }, { threshold: 0.5 });
-  document.querySelectorAll('.number-val[data-count]').forEach(el => numObs.observe(el));
+  document.querySelectorAll('.hero-stat-val[data-count]').forEach(el => heroNumObs.observe(el));
 
   // ===== WHAT WE DO - SCROLL DRIVEN PANEL =====
   (() => {
@@ -4559,7 +5141,6 @@
   }
 </script>
 <script type="module" src="./index.js"></script>
-<script type="module" src="/src/features8/main.jsx"></script>
 <script type="module" src="/src/floaticons/main.jsx"></script>
 <script type="module" src="/src/hills/main.jsx"></script>
 </body>

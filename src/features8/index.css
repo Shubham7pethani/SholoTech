@@ -2,6 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== Scroll-reveal animations (triggered by the .f8-in class) ===== */
+/* card fades in (opacity only, so the hover lift transform is untouched) */
+.f8-card {
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.f8-card.f8-in {
+  opacity: 1;
+}
+
+/* chart line draws itself left-to-right */
+.f8-card .f8-draw {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+}
+.f8-card.f8-in .f8-draw {
+  transition: stroke-dashoffset 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+  stroke-dashoffset: 0;
+}
+
+/* area fill fades up after the line is drawn */
+.f8-card .f8-area {
+  opacity: 0;
+}
+.f8-card.f8-in .f8-area {
+  transition: opacity 1.2s ease 0.7s;
+  opacity: 1;
+}
+
+/* team rows slide in with a stagger (delay set inline per row) */
+.f8-card .f8-avatar {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.f8-card.f8-in .f8-avatar {
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .f8-card,
+  .f8-card .f8-draw,
+  .f8-card .f8-area,
+  .f8-card .f8-avatar {
+    opacity: 1;
+    transform: none;
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+}
+
 #features8-root {
   --f8-background: rgb(2, 2, 3);
   --f8-foreground: #ffffff;

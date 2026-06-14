@@ -10,3 +10,12 @@
     transform: translate3d(0, -16px, 0);
   }
 }
+
+/* on mobile, shrink the few edge icons so they stay subtle and don't crowd text */
+@media (max-width: 640px) {
+  .f8-mobile .f8-iconbox {
+    height: 42px !important;
+    width: 42px !important;
+    padding: 9px !important;
+  }
+}
