@@ -4228,6 +4228,11 @@
   (function initSmoothScroll() {
     if (!window.Lenis) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // on touch devices, Lenis's syncTouch takes over native touch scrolling
+    // with a JS-driven loop, which is the main cause of scroll lag on phones
+    // and low-end devices. Native touch scroll is already smooth, so only
+    // enable the wheel-driven glide on devices with a fine pointer (desktop).
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
     lenis = new Lenis({
       wrapper: document.body,
       content: document.body,
@@ -4235,9 +4240,9 @@
       // glide used by award-winning agency sites (instead of a flat lerp)
       duration: 1.4,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
+      smoothWheel: !isTouch,
       wheelMultiplier: 1.05,
-      syncTouch: true,
+      syncTouch: false,
       touchMultiplier: 1.6,
     });
     function raf(time) {
@@ -4361,9 +4366,16 @@
   const mainNav = document.querySelector('.nav');
   const NAV_RANGE = 120; // px of scroll over which the morph completes
   let navTicking = false;
+  let navLastP = -1;
   function updateNavProgress() {
     const p = Math.max(0, Math.min(1, document.body.scrollTop / NAV_RANGE));
-    mainNav.style.setProperty('--p', p.toFixed(4));
+    // skip the style write once the morph is fully settled (p === 0 or 1) and
+    // unchanged from last frame - avoids a style/layout recalc on every
+    // scroll frame for the whole rest of the page
+    if (p !== navLastP) {
+      mainNav.style.setProperty('--p', p.toFixed(4));
+      navLastP = p;
+    }
     navTicking = false;
   }
   document.body.addEventListener('scroll', () => {
