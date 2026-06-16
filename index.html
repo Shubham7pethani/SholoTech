@@ -4299,6 +4299,8 @@
     vx = Math.cos(ang) * speed;
     vy = Math.sin(ang) * speed;
 
+    let logoRaf = null;
+    let logoRunning = false;
     function tick() {
       x += vx; y += vy;
       // bounce softly off the edges so it wanders the whole hero
@@ -4308,9 +4310,18 @@
       else if (y + size >= H) { y = H - size; vy = -Math.abs(vy); }
       angle += va;
       logo.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${angle.toFixed(1)}deg)`;
-      requestAnimationFrame(tick);
+      logoRaf = requestAnimationFrame(tick);
     }
-    requestAnimationFrame(tick);
+    // only drift while the hero is on screen; no point animating once scrolled past
+    const logoIO = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        if (!logoRunning) { logoRunning = true; logoRaf = requestAnimationFrame(tick); }
+      } else if (logoRunning) {
+        logoRunning = false;
+        cancelAnimationFrame(logoRaf);
+      }
+    }, { threshold: 0 });
+    logoIO.observe(stage);
   })();
 
   // ===== FAQ ACCORDION =====

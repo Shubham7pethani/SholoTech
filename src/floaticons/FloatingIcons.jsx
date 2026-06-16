@@ -42,16 +42,18 @@ const EASE = 0.12;
 export default function FloatingIcons() {
   const itemRefs = React.useRef([]);
 
+  const containerRef = React.useRef(null);
+
   React.useEffect(() => {
     const offsets = ITEMS.map(() => ({ x: 0, y: 0 }));
     const mouse = { x: -9999, y: -9999 };
     let frameId;
+    let running = false;
 
     const handleMove = (e) => {
       mouse.x = e.clientX;
       mouse.y = e.clientY;
     };
-    window.addEventListener("mousemove", handleMove);
 
     const tick = () => {
       itemRefs.current.forEach((el, i) => {
@@ -79,16 +81,39 @@ export default function FloatingIcons() {
       });
       frameId = requestAnimationFrame(tick);
     };
-    tick();
 
-    return () => {
+    // The cursor-repel loop reads getBoundingClientRect() for every icon each
+    // frame (forced layout). Running it while the section is scrolled off-screen
+    // thrashes layout and makes scrolling janky across the whole page, so only
+    // run it (and listen for mouse moves) while the section is actually visible.
+    const start = () => {
+      if (running) return;
+      running = true;
+      window.addEventListener("mousemove", handleMove);
+      tick();
+    };
+    const stop = () => {
+      if (!running) return;
+      running = false;
       window.removeEventListener("mousemove", handleMove);
       cancelAnimationFrame(frameId);
+    };
+
+    const target = containerRef.current;
+    const io = new IntersectionObserver(
+      ([entry]) => { entry.isIntersecting ? start() : stop(); },
+      { threshold: 0 }
+    );
+    if (target) io.observe(target);
+
+    return () => {
+      io.disconnect();
+      stop();
     };
   }, []);
 
   return (
-    <div className="tw-relative tw-h-full tw-w-full">
+    <div ref={containerRef} className="tw-relative tw-h-full tw-w-full">
       {ITEMS.map(({ Icon, img, pos, size, duration, delay }, i) => (
         <div
           key={i}

@@ -175,17 +175,46 @@ export const GLSLHills = ({ width = '100vw', height = '100vh', cameraZ = 125, pl
       frameId = requestAnimationFrame(renderLoop);
     };
 
+    // Only render while the hero is actually on screen. This WebGL shader is
+    // expensive (large noise-displaced plane), so leaving it running while the
+    // user has scrolled far down the page wastes the GPU every frame and makes
+    // scrolling janky. Pause the loop when off-screen, resume when back.
+    let running = false;
+    const startLoop = () => {
+      if (running) return;
+      running = true;
+      clock.getDelta(); // discard the gap so the surface doesn't jump on resume
+      renderLoop();
+    };
+    const stopLoop = () => {
+      running = false;
+      cancelAnimationFrame(frameId);
+    };
+
     renderer.setClearColor(0x000000, 0);
     camera.position.set(0, 16, cameraZ);
     camera.lookAt(new THREE.Vector3(0, 28, 0));
     scene.add(plane.mesh);
     window.addEventListener('resize', resize);
     resize();
-    renderLoop();
+
+    const target = canvasRef.current.parentElement || canvasRef.current;
+    const io = new IntersectionObserver(
+      ([entry]) => { entry.isIntersecting ? startLoop() : stopLoop(); },
+      { threshold: 0 }
+    );
+    io.observe(target);
+
+    const onVisibility = () => {
+      if (document.hidden) stopLoop();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       window.removeEventListener('resize', resize);
-      cancelAnimationFrame(frameId);
+      document.removeEventListener('visibilitychange', onVisibility);
+      io.disconnect();
+      stopLoop();
       renderer.dispose();
     };
   }, [cameraZ, planeSize, speed]);
