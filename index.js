@@ -558,6 +558,24 @@ window.addEventListener('scroll', () => {
   scrollY = window.scrollY;
 }, { passive: true });
 
+// Only run the (expensive multi-pass) hero render loop while the hero is
+// actually on screen. It previously rendered every frame regardless of scroll
+// position, keeping the GPU pinned and making the whole page scroll janky once
+// the user moved past the hero. The animate() guard below checks this flag.
+let heroInView = true;
+if (typeof IntersectionObserver !== 'undefined' && crtFrame) {
+  new IntersectionObserver(([entry]) => {
+    const wasInView = heroInView;
+    heroInView = entry.isIntersecting;
+    // Reset the FPS-watchdog sample window when resuming, so the paused gap
+    // isn't measured as a low-FPS frame and doesn't trigger a false downgrade.
+    if (heroInView && !wasInView && fpsWatchdogActive) {
+      fpsFrames = 0;
+      fpsStartTime = performance.now();
+    }
+  }, { threshold: 0 }).observe(crtFrame);
+}
+
 // ============ ANIMATION LOOP ============
 const clock = new THREE.Clock();
 const raycaster = new THREE.Raycaster();
@@ -611,8 +629,8 @@ function downgradeQuality() {
 }
 
 function animate() {
-  // Skip rendering only when tab is hidden
-  if (!pageVisible) return;
+  // Skip rendering when the tab is hidden or the hero is scrolled out of view
+  if (!pageVisible || !heroInView) return;
 
   const dt = Math.min(clock.getDelta(), 0.05); // Clamp delta to avoid huge jumps
   const elapsed = clock.elapsedTime;

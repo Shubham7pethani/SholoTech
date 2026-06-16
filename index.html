@@ -5105,8 +5105,21 @@
         this.notifiedOver=false;
         this.sparkAngle=0;
         this.last=performance.now();
+        this.active=true;
+        this.rafId=null;
         this._bind();
-        requestAnimationFrame(t=>this._loop(t));
+        this.rafId=requestAnimationFrame(t=>this._loop(t));
+      }
+
+      pause(){
+        this.active=false;
+        if(this.rafId) cancelAnimationFrame(this.rafId);
+      }
+      resume(){
+        if(this.active) return;
+        this.active=true;
+        this.last=performance.now(); // avoid a big dt jump after the pause
+        this.rafId=requestAnimationFrame(t=>this._loop(t));
       }
 
       _resize(){
@@ -5295,7 +5308,7 @@
           this.mstate='fight_victory';
         }
 
-        requestAnimationFrame(t=>this._loop(t));
+        if(this.active) this.rafId=requestAnimationFrame(t=>this._loop(t));
       }
 
       drawOnShared(ctx, rowLeft){
@@ -5425,7 +5438,33 @@
     M1=new Mascot('c1','b1','w1',1);
     M2=new Mascot('c2','b2','w2',-1);
     phase='patrol';
-    schedNextFight();
+
+    // Pause the mascots (two always-on canvas redraw loops) and stop scheduling
+    // fights whenever the button row is scrolled off screen. No point animating
+    // pixel characters the user can't see, and it keeps the rest of the page
+    // smooth while scrolling.
+    const brow=document.getElementById('brow');
+    if(brow){
+      const mascotIO=new IntersectionObserver(([entry])=>{
+        if(entry.isIntersecting){
+          M1.resume(); M2.resume();
+          if(phase!=='fighting'&&phase!=='done') schedNextFight();
+        } else {
+          M1.pause(); M2.pause();
+          clearTimeout(schedTimer);
+          if(phase==='fighting'||phase==='done'){
+            phase='patrol';
+            cancelAnimationFrame(fightLoopRaf);
+            if(bCtx) bCtx.clearRect(0,0,bW,bH);
+            blasts=[];impacts=[];megaImpacts=[];
+            M1.backToPatrol(); M2.backToPatrol();
+          }
+        }
+      },{threshold:0});
+      mascotIO.observe(brow);
+    } else {
+      schedNextFight();
+    }
 
     window.addEventListener('resize', () => {
       if(M1) M1._resize();
