@@ -25,9 +25,9 @@ const gpuTier = (() => {
 })();
 
 const qualityPresets = {
-  low:  { pixelRatio: 1.0,  marchSteps: 48,  aoSteps: 2,  dotSize: 6.0, dotGap: 3.0, scanlines: 0.55, bloomEnabled: false },
-  mid:  { pixelRatio: 1.25, marchSteps: 64,  aoSteps: 3,  dotSize: 5.0, dotGap: 2.5, scanlines: 0.75, bloomEnabled: true  },
-  high: { pixelRatio: 1.5,  marchSteps: 80,  aoSteps: 3,  dotSize: 5.0, dotGap: 2.5, scanlines: 0.75, bloomEnabled: true  },
+  low:  { pixelRatio: 1.0,  marchSteps: 32,  aoSteps: 1,  dotSize: 6.0, dotGap: 3.0, scanlines: 0.55, bloomEnabled: false },
+  mid:  { pixelRatio: 1.0,  marchSteps: 40,  aoSteps: 2,  dotSize: 5.0, dotGap: 2.5, scanlines: 0.75, bloomEnabled: true  },
+  high: { pixelRatio: 1.0,  marchSteps: 48,  aoSteps: 2,  dotSize: 5.0, dotGap: 2.5, scanlines: 0.75, bloomEnabled: true  },
 };
 let currentTier = isMobile ? 'low' : gpuTier;
 let quality = { ...qualityPresets[currentTier] };
@@ -110,7 +110,7 @@ const quadMaterial = new THREE.ShaderMaterial({
     uResolution: { value: new THREE.Vector2(size.width, size.height) },
     uCameraPos: { value: camera.position.clone() },
     uCameraTarget: { value: new THREE.Vector3(0, 0, 0) },
-    uPixelRatio: { value: Math.min(window.devicePixelRatio, 1.5) },
+    uPixelRatio: { value: Math.min(window.devicePixelRatio, quality.pixelRatio) },
     uGooeyness: { value: settings.scene.gooeyness },
     uSpeed: { value: settings.scene.speed },
     uMouseSpherePos: { value: new THREE.Vector3(0, 0, 0) },
@@ -554,9 +554,13 @@ dotMatrixPass.uniforms.uResolution.value.set(size.width, size.height);
 let scrollY = 0;
 let smoothScrollY = 0;
 
-window.addEventListener('scroll', () => {
-  scrollY = window.scrollY;
-}, { passive: true });
+const getScrollTop = () => (document.body && document.body.scrollTop) || window.scrollY || document.documentElement.scrollTop || 0;
+const onScrollParallax = () => {
+  scrollY = getScrollTop();
+};
+
+window.addEventListener('scroll', onScrollParallax, { passive: true });
+document.body.addEventListener('scroll', onScrollParallax, { passive: true });
 
 // Only run the (expensive multi-pass) hero render loop while the hero is
 // actually on screen. It previously rendered every frame regardless of scroll
@@ -642,17 +646,20 @@ function animate() {
   mouseSphereRadius += (targetR - mouseSphereRadius) * step;
   if (mouseSphereRadius < 0.005 && !mouseInScene) mouseSphereRadius = 0.0;
 
-  raycaster.setFromCamera(mouse, camera);
-  const rayDir = raycaster.ray.direction;
-  const rayOrigin = raycaster.ray.origin;
-  _forward.subVectors(controls.target, camera.position).normalize();
-  const dist = camera.position.distanceTo(controls.target);
-  const t = dist / rayDir.dot(_forward);
-  mouseWorldTarget.copy(rayOrigin).addScaledVector(rayDir, t);
-  mouseWorld.lerp(mouseWorldTarget, mouseDamping);
+  if (mouseInScene || mouseSphereRadius > 0.001) {
+    raycaster.setFromCamera(mouse, camera);
+    const rayDir = raycaster.ray.direction;
+    const rayOrigin = raycaster.ray.origin;
+    _forward.subVectors(controls.target, camera.position).normalize();
+    const dist = camera.position.distanceTo(controls.target);
+    const t = dist / rayDir.dot(_forward);
+    mouseWorldTarget.copy(rayOrigin).addScaledVector(rayDir, t);
+    mouseWorld.lerp(mouseWorldTarget, mouseDamping);
+    quadMaterial.uniforms.uMouseSpherePos.value.copy(mouseWorld);
+  }
 
   // Smooth scroll interpolation for parallax
-  smoothScrollY += (scrollY - smoothScrollY) * 0.1;
+  smoothScrollY += (scrollY - smoothScrollY) * 0.15;
   const vh = window.innerHeight;
   const scrollProgress = Math.min(smoothScrollY / vh, 1.0);
 
