@@ -4850,17 +4850,19 @@
 
       const row=document.getElementById('brow');
       if(!row) return;
+      const rowR=row.getBoundingClientRect();
 
       // Draw active mascots on the shared canvas
       [M1,M2].forEach(m => {
         if(m && m.mstate.startsWith('fight_')) {
-          m.drawOnShared(bCtx);
+          m.drawOnShared(bCtx, rowR.left);
         }
       });
 
       [M1,M2].forEach(target=>{
         const other=target===M1?M2:M1;
-        const tx=target.btn.offsetLeft+target.x;
+        const btnR=target.btn.getBoundingClientRect();
+        const tx=btnR.left-rowR.left+target.x;
         const ty=bH-PH;
         blasts.forEach(b=>{
           if(!b.alive)return;
@@ -5152,8 +5154,9 @@
         if(this.active) this.rafId=requestAnimationFrame(t=>this._loop(t));
       }
 
-      drawOnShared(ctx){
-        const rx = this.btn.offsetLeft + this.x;
+      drawOnShared(ctx, rowLeft){
+        const btnR = this.btn.getBoundingClientRect();
+        const rx = btnR.left - rowLeft + this.x;
         const ms = this.mstate;
 
         if(ms==='fight_charge'||ms==='fight_shoot'){
@@ -5198,7 +5201,11 @@
       }
 
       _firePower(){
-        const bx=this.btn.offsetLeft+this.x+(this.fightDir===1?PW:0);
+        const row=document.getElementById('brow');
+        if(!row) return;
+        const rowR=row.getBoundingClientRect();
+        const btnR=this.btn.getBoundingClientRect();
+        const bx=btnR.left-rowR.left+this.x+(this.fightDir===1?PW:0);
         const by=bH-PH*0.5;
         const speed=6;
         blasts.push(new Blast(bx,by,this.fightDir*speed));
